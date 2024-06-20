@@ -25,6 +25,21 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
 
     def get_endeff_pos(self):
         return self.data.get_body_xpos('hand').copy()
+    
+    def get_body_contact_force(self, body_name):
+        '''
+        Calculate contact force of a given body. (Mei)
+        Arg(s):
+            body_name : str
+                Name of the body to calculate contact force of
+        Returns:
+            contact_force : np(3, )
+                The three dimensional contact force that the specified body is experiencing
+        '''
+        geom_id = self.model.geom_name2id(body_name)
+        contact_force = np.zeros(6, dtype=np.float64)
+        mujoco_py.functions.mj_contactForce(self.model, self.data, geom_id, contact_force)
+        return contact_force[:3]
 
     @property
     def tcp_center(self):

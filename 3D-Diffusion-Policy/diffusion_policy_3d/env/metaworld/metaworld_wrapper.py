@@ -125,17 +125,20 @@ class MetaWorldEnv(gym.Env):
     
     def get_ee_contact_forces(self):
         '''
-        TODO: new functions, calculate contact force of gripper from mujoco based on contact locations
+        Calculate contact force of gripper from mujoco based on contact locations (Mei)
         Arg(s):
             None
         Returns:
-            forces : np[(3, )]
-                Forces in xyz direction respectively
+            left_forces : np[(3, )]
+                Forces on the left finger in the contact frame
+            right_forces : np[(3, )]
+                Forces on the right finger in the contact frame
         '''
-        forces = np.array([0, 0, 0])
-        return forces
+        left_forces = self.env.get_body_conbtact_force('leftEndEffector')
+        right_forces = self.env.get_body_contact_force('rightEndEffector')
+        return left_forces, right_forces
     
-    def render_compliant_image(self, contact_forces):
+    def render_compliant_image(self, left_figner_forces, right_finger_forces):
         # TODO: from Yifan
         compliant_image = np.random.rand(640, 480, 3)
         return compliant_image
@@ -182,8 +185,8 @@ class MetaWorldEnv(gym.Env):
         _, depth = self.get_point_cloud()
 
         # add compliant gripper image
-        contact_forces = self.get_ee_contact_forces()
-        compliant_img = self.render_compliant_image(contact_forces)
+        l_forces, r_forces = self.get_ee_contact_forces()
+        compliant_img = self.render_compliant_image(l_forces, r_forces)
         
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
