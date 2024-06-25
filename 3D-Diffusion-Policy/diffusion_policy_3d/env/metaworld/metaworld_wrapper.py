@@ -3,6 +3,7 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 import metaworld
 import random
 import time
@@ -12,6 +13,10 @@ from termcolor import cprint
 from gym import spaces
 from diffusion_policy_3d.gym_util.mujoco_point_cloud import PointCloudGenerator
 from diffusion_policy_3d.gym_util.mjpc_wrapper import point_cloud_sampling
+
+upper_repo_dir = '/home/mh2595/workspace/implicit_force_simulation'
+sys.path.insert(0, upper_repo_dir)
+from src.utils.utils import CompliantGripper
 
 TASK_BOUDNS = {
     'default': [-0.5, -1.5, -0.795, 1, -0.4, 100],
@@ -75,7 +80,8 @@ class MetaWorldEnv(gym.Env):
         self.action_space = self.env.action_space
         self.obs_sensor_dim = self.get_robot_state().shape[0]
 
-        
+        self.compliant_gripper_urdf_path = '/home/mh2595/workspace/implicit_force_simulation/src/utils/FFF.urdf'
+        self.compliant_gripper = CompliantGripper(self.compliant_gripper_urdf_path)
     
         self.observation_space = spaces.Dict({
             'image': spaces.Box(
@@ -96,10 +102,10 @@ class MetaWorldEnv(gym.Env):
                 shape=(self.obs_sensor_dim,),
                 dtype=np.float32
             ),
-            'point_cloud': spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(self.num_points, 3),
+            'compliant_image': spaces.Box(
+                low=0,
+                high=255,
+                shape=(3, self.image_size, self.image_size),
                 dtype=np.float32
             ),
             'full_state': spaces.Box(
@@ -134,14 +140,26 @@ class MetaWorldEnv(gym.Env):
             right_forces : np[(3, )]
                 Forces on the right finger in the contact frame
         '''
-        left_forces = self.env.get_body_conbtact_force('leftEndEffector')
-        right_forces = self.env.get_body_contact_force('rightEndEffector')
+        left_forces = self.env.get_body_contact_force('leftpad_geom')
+        right_forces = self.env.get_body_contact_force('rightpad_geom')
         return left_forces, right_forces
     
     def render_compliant_image(self, left_figner_forces, right_finger_forces):
-        # TODO: from Yifan
-        compliant_image = np.random.rand(640, 480, 3)
-        return compliant_image
+        '''
+        Create compliant gripper object and render image.
+        Arg(s):
+            left_finger_forces : np.array(3, )
+                Forces in the x, y and z direction for the left gripper finger
+            right_finger_forces : np.array(3, )
+                Forces in the x, y and z direction for the right gripper finger
+        Returns:
+            image : PIL.Image
+                rendered image of the gripper under forces
+        '''
+        # calculate combined external force
+        extern_force = left_figner_forces[[0, 2]] + right_finger_forces[[0, 2]]
+
+        return self.compliant_gripper.render_img(extern_force)
 
     def render_high_res(self, resolution=1024):
         img = self.env.sim.render(width=resolution, height=resolution, camera_name="corner2", device_id=self.device_id)
@@ -195,7 +213,7 @@ class MetaWorldEnv(gym.Env):
             'image': obs_pixels,
             'depth': depth,
             'agent_pos': robot_state,
-            'compliant image': compliant_img,
+            'compliant_image': compliant_img,
         }
         return obs_dict
             
@@ -208,7 +226,11 @@ class MetaWorldEnv(gym.Env):
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-        point_cloud, depth = self.get_point_cloud()
+        _, depth = self.get_point_cloud()
+
+        # add compliant gripper image
+        l_forces, r_forces = self.get_ee_contact_forces()
+        compliant_img = self.render_compliant_image(l_forces, r_forces)
         
         if obs_pixels.shape[0] != 3:  # make channel first
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -217,7 +239,7 @@ class MetaWorldEnv(gym.Env):
             'image': obs_pixels,
             'depth': depth,
             'agent_pos': robot_state,
-            'point_cloud': point_cloud,
+            'compliant_image': compliant_img,
             'full_state': raw_state,
         }
 
@@ -233,7 +255,11 @@ class MetaWorldEnv(gym.Env):
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-        point_cloud, depth = self.get_point_cloud()
+        _, depth = self.get_point_cloud()
+
+        # add compliant gripper image
+        l_forces, r_forces = self.get_ee_contact_forces()
+        compliant_img = self.render_compliant_image(l_forces, r_forces)
         
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -242,7 +268,7 @@ class MetaWorldEnv(gym.Env):
             'image': obs_pixels,
             'depth': depth,
             'agent_pos': robot_state,
-            'point_cloud': point_cloud,
+            'compliant_image': compliant_img,
             'full_state': raw_obs,
         }
 
