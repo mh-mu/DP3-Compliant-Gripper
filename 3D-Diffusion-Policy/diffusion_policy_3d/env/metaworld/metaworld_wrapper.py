@@ -140,8 +140,8 @@ class MetaWorldEnv(gym.Env):
             right_forces : np[(3, )]
                 Forces on the right finger in the contact frame
         '''
-        left_forces = self.env.get_body_contact_force('leftpad_geom')
-        right_forces = self.env.get_body_contact_force('rightpad_geom')
+        left_forces = self.env.get_body_contact_force('leftpad')
+        right_forces = self.env.get_body_contact_force('rightpad')
         return left_forces, right_forces
     
     def render_compliant_image(self, left_figner_forces, right_finger_forces):

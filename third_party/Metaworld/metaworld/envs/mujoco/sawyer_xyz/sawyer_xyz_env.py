@@ -28,18 +28,53 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
     
     def get_body_contact_force(self, body_name):
         '''
-        Calculate contact force of a given body. (Mei)
+        Calculate contact force of a given body in the gripper frame. (Mei)
         Arg(s):
             body_name : str
                 Name of the body to calculate contact force of
         Returns:
             contact_force : np(3, )
-                The three dimensional contact force that the specified body is experiencing
+                The three dimensional contact force that the specified body is experiencing 
+                in the gripper frame
         '''
-        geom_id = self.model.geom_name2id(body_name)
-        contact_force = np.zeros(6, dtype=np.float64)
-        mujoco_py.functions.mj_contactForce(self.model, self.data, geom_id, contact_force)
-        return contact_force[:3]
+        target_body_id = self.model.body_name2id(body_name)
+        total_contact_force = np.zeros(3, dtype=np.float64)
+
+        # Get rotation matrix of the gripper frame
+        gripper_id = self.model.body_name2id('hand')
+        gripper_rot_mat = self.data.body_xmat[gripper_id].reshape(3, 3)
+
+        print('Number of contacts:', self.data.ncon)
+
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+
+            body1_id = self.model.geom_bodyid[contact.geom1]
+            body2_id = self.model.geom_bodyid[contact.geom2]
+
+            # Print names of the bodies in contact
+            body1_name = self.model.body_id2name(body1_id)
+            body2_name = self.model.body_id2name(body2_id)
+            print(f'Contact bodies: {body1_name}, {body2_name}')
+
+            contact_force = np.zeros(6, dtype=np.float64)
+            mujoco_py.functions.mj_contactForce(self.model, self.data, i, contact_force)
+
+            print(f'Contact Forces: {contact_force[:3]}')
+
+            # Convert contact force from contact frame to world frame
+            contact_frame = np.array(contact.frame).reshape(3, 3)
+            contact_force_world = contact_frame @ contact_force[:3]
+
+            if body1_id == target_body_id or body2_id == target_body_id:
+                # Convert contact force from world frame to gripper frame
+                contact_force_gripper = gripper_rot_mat.T @ contact_force_world
+                print(f'\n Geom name: {target_body_id}, Geom force: {contact_force_gripper}')
+                total_contact_force += contact_force_gripper
+
+        print('Given Geom:', body_name, ' | Total contact force: ', total_contact_force, '\n\n\n\n')
+
+        return total_contact_force
 
     @property
     def tcp_center(self):
