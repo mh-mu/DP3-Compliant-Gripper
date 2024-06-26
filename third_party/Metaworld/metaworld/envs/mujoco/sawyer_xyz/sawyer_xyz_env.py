@@ -69,10 +69,10 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
             if body1_id == target_body_id or body2_id == target_body_id:
                 # Convert contact force from world frame to gripper frame
                 contact_force_gripper = gripper_rot_mat.T @ contact_force_world
-                print(f'\n Geom name: {target_body_id}, Geom force: {contact_force_gripper}')
+                print(f'Body name: {target_body_id}, Body force: {contact_force_gripper}\n')
                 total_contact_force += contact_force_gripper
 
-        print('Given Geom:', body_name, ' | Total contact force: ', total_contact_force, '\n\n\n\n')
+        print('Given Body:', body_name, ' | Total contact force: ', total_contact_force, '\n\n\n\n')
 
         return total_contact_force
 
