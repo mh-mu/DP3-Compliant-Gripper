@@ -112,6 +112,11 @@ def main(args):
 			ep_success_times += info['success']
    
 			if done:
+				gripper_forces = np.array(e.gripper_forces)
+				dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy'
+				path = os.path.join(dir, 'gripper_forces.npy')
+				np.save(path, gripper_forces)
+
 				break
 		
 

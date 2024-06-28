@@ -40,7 +40,6 @@ class MetaWorldEnv(gym.Env):
         # https://arxiv.org/abs/2212.05698
         # self.env.sim.model.cam_pos[2] = [0.75, 0.075, 0.7]
         self.env.sim.model.cam_pos[2] = [0.6, 0.295, 0.8]
-        
 
         self.env.sim.model.vis.map.znear = 0.1
         self.env.sim.model.vis.map.zfar = 1.5
@@ -82,6 +81,7 @@ class MetaWorldEnv(gym.Env):
 
         self.compliant_gripper_urdf_path = '/home/mh2595/workspace/implicit_force_simulation/src/utils/FFF.urdf'
         self.compliant_gripper = CompliantGripper(self.compliant_gripper_urdf_path)
+        self.gripper_forces = []
     
         self.observation_space = spaces.Dict({
             'image': spaces.Box(
@@ -144,7 +144,7 @@ class MetaWorldEnv(gym.Env):
         right_forces = self.env.get_body_contact_force('rightpad')
         return left_forces, right_forces
     
-    def render_compliant_image(self, left_figner_forces, right_finger_forces):
+    def render_compliant_image(self, left_finger_forces, right_finger_forces):
         '''
         Create compliant gripper object and render image.
         Arg(s):
@@ -157,7 +157,9 @@ class MetaWorldEnv(gym.Env):
                 rendered image of the gripper under forces
         '''
         # calculate combined external force
-        extern_force = left_figner_forces[[0, 2]] + right_finger_forces[[0, 2]]
+        extern_force = left_finger_forces[[0, 2]] + right_finger_forces[[0, 2]]
+        cprint(f'Gripper force: {left_finger_forces + right_finger_forces}', 'yellow')
+        self.gripper_forces.append(left_finger_forces + right_finger_forces)
 
         return self.compliant_gripper.render_img(extern_force)
 
@@ -223,6 +225,7 @@ class MetaWorldEnv(gym.Env):
         raw_state, reward, done, env_info = self.env.step(action)
         self.cur_step += 1
 
+        cprint(f'\n\n\n\nCurrent Step: {self.cur_step}', 'green')
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()

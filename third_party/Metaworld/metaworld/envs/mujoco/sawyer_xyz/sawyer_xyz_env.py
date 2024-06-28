@@ -6,6 +6,7 @@ from gym.spaces import Box
 from gym.spaces import Discrete
 import mujoco_py
 import numpy as np
+from termcolor import cprint
 
 from metaworld.envs import reward_utils
 from metaworld.envs.mujoco.mujoco_env import MujocoEnv, _assert_task_is_set
@@ -40,11 +41,19 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
         target_body_id = self.model.body_name2id(body_name)
         total_contact_force = np.zeros(3, dtype=np.float64)
 
+        # Print accelaration of the hammer
+        hammer_id = self.model.body_name2id('hammer')
+        # cacc = np.zeros(6)
+        # mujoco_py.cymj._mj_objectAcceleration(self.model, self.data, mujoco_py.generated.const.mjtObj.mjOBJ_BODY, hammer_id, cacc, 1)
+        # cprint(f'Hammer acc: {cacc}', 'red')
+        cprint(f'Acceleration: {self.data.qacc}', 'red')
+        cprint(f'Hammer pos: {self.data.body_xpos[hammer_id]}')
+
         # Get rotation matrix of the gripper frame
         gripper_id = self.model.body_name2id('hand')
         gripper_rot_mat = self.data.body_xmat[gripper_id].reshape(3, 3)
 
-        print('Number of contacts:', self.data.ncon)
+        cprint(f'Number of contacts: {self.data.ncon}', 'blue')
 
         for i in range(self.data.ncon):
             contact = self.data.contact[i]
@@ -55,12 +64,13 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
             # Print names of the bodies in contact
             body1_name = self.model.body_id2name(body1_id)
             body2_name = self.model.body_id2name(body2_id)
-            print(f'Contact bodies: {body1_name}, {body2_name}')
+            print(f'Bodies: {body1_name}, {body2_name}')
 
             contact_force = np.zeros(6, dtype=np.float64)
             mujoco_py.functions.mj_contactForce(self.model, self.data, i, contact_force)
 
-            print(f'Contact Forces: {contact_force[:3]}')
+            np.set_printoptions(formatter={'float': '{:.2f}'.format})
+            print(f'Forces: {contact_force}')
 
             # Convert contact force from contact frame to world frame
             contact_frame = np.array(contact.frame).reshape(3, 3)
@@ -69,10 +79,11 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
             if body1_id == target_body_id or body2_id == target_body_id:
                 # Convert contact force from world frame to gripper frame
                 contact_force_gripper = gripper_rot_mat.T @ contact_force_world
-                print(f'Body name: {target_body_id}, Body force: {contact_force_gripper}\n')
+                cprint(f'Recorded body name: {body_name} | Force (gripper frame): {contact_force_gripper}', 'cyan')
+                cprint(f'Contact location: {contact.pos[:]}', 'cyan')
                 total_contact_force += contact_force_gripper
 
-        print('Given Body:', body_name, ' | Total contact force: ', total_contact_force, '\n\n\n\n')
+        cprint(f'Given Body: {body_name} | Total contact force: {total_contact_force}', 'magenta')
 
         return total_contact_force
 
