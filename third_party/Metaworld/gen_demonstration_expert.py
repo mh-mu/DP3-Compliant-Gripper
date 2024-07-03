@@ -112,13 +112,7 @@ def main(args):
 			ep_success_times += info['success']
    
 			if done:
-				gripper_forces = np.array(e.gripper_forces)
-				dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy'
-				path = os.path.join(dir, 'gripper_forces.npy')
-				np.save(path, gripper_forces)
-
 				break
-		
 
 		if not ep_success or ep_success_times < 5:
 			cprint(f'Episode: {episode_idx} failed with reward {ep_reward} and success times {ep_success_times}', 'red')
@@ -135,6 +129,16 @@ def main(args):
 			cprint('Episode: {}, Reward: {}, Success Times: {}'.format(episode_idx, ep_reward, ep_success_times), 'green')
 			episode_idx += 1
 	
+	# Write recorded compliant gripper forces to .npy file
+	gripper_force_id = 0
+	gripper_forces = np.array(e.gripper_forces)
+	dir = '/home/mh2595/workspace/implicit_force_simulation/trial_data'
+	path = os.path.join(dir, 'gripper_forces_'+ env_name + str(gripper_force_id) +'.npy')
+	while os.path.exists(path):
+		gripper_force_id += 1
+		path = os.path.join(dir, 'gripper_forces_'+ env_name + str(gripper_force_id) +'.npy')
+	np.save(path, gripper_forces)
+	print(f'Force range: {np.ptp(gripper_forces, axis=0)}')
 
 	# save data
  	###############################

@@ -79,8 +79,15 @@ class MetaWorldEnv(gym.Env):
         self.action_space = self.env.action_space
         self.obs_sensor_dim = self.get_robot_state().shape[0]
 
+        # Compliant gripper 
         self.compliant_gripper_urdf_path = '/home/mh2595/workspace/implicit_force_simulation/src/utils/FFF.urdf'
-        self.compliant_gripper = CompliantGripper(self.compliant_gripper_urdf_path)
+        gripper_k_dict = {
+            'hammer-v2-goal-observable': [7e3, 1.4e4],
+            'assembly-v2-goal-observable': [1.5e3, 1.2e4]
+        }
+        if task_name not in gripper_k_dict:
+            raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
+        self.compliant_gripper = CompliantGripper(self.compliant_gripper_urdf_path, K=gripper_k_dict[task_name])
         self.gripper_forces = []
     
         self.observation_space = spaces.Dict({
@@ -157,7 +164,7 @@ class MetaWorldEnv(gym.Env):
                 rendered image of the gripper under forces
         '''
         # calculate combined external force
-        extern_force = left_finger_forces[[0, 2]] + right_finger_forces[[0, 2]]
+        extern_force = left_finger_forces[[0, 1]] + right_finger_forces[[0, 1]]
         cprint(f'Gripper force: {left_finger_forces + right_finger_forces}', 'yellow')
         self.gripper_forces.append(left_finger_forces + right_finger_forces)
 

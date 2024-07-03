@@ -42,12 +42,12 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
         total_contact_force = np.zeros(3, dtype=np.float64)
 
         # Print accelaration of the hammer
-        hammer_id = self.model.body_name2id('hammer')
+        # hammer_id = self.model.body_name2id('hammer')
         # cacc = np.zeros(6)
         # mujoco_py.cymj._mj_objectAcceleration(self.model, self.data, mujoco_py.generated.const.mjtObj.mjOBJ_BODY, hammer_id, cacc, 1)
         # cprint(f'Hammer acc: {cacc}', 'red')
-        cprint(f'Acceleration: {self.data.qacc}', 'red')
-        cprint(f'Hammer pos: {self.data.body_xpos[hammer_id]}')
+        # cprint(f'Acceleration: {self.data.qacc}', 'red')
+        # cprint(f'Hammer pos: {self.data.body_xpos[hammer_id]}')
 
         # Get rotation matrix of the gripper frame
         gripper_id = self.model.body_name2id('hand')
