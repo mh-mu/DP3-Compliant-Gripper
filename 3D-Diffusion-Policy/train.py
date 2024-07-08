@@ -24,7 +24,7 @@ import shutil
 import time
 import threading
 from hydra.core.hydra_config import HydraConfig
-from diffusion_policy_3d.policy.dp3 import DP3
+from diffusion_policy_3d.policy.dp3 import DP3, DP3Compliant
 from diffusion_policy_3d.dataset.base_dataset import BaseDataset
 from diffusion_policy_3d.env_runner.base_runner import BaseRunner
 from diffusion_policy_3d.common.checkpoint_util import TopKCheckpointManager
@@ -50,9 +50,11 @@ class TrainDP3Workspace:
         random.seed(seed)
 
         # configure model
-        self.model: DP3 = hydra.utils.instantiate(cfg.policy)
+        # self.model: DP3 = hydra.utils.instantiate(cfg.policy)
+        self.model: DP3Compliant = hydra.utils.instantiate(cfg.policy)
 
-        self.ema_model: DP3 = None
+        # self.ema_model: DP3 = None
+        self.ema_model: DP3Compliant = None
         if cfg.training.use_ema:
             try:
                 self.ema_model = copy.deepcopy(self.model)
