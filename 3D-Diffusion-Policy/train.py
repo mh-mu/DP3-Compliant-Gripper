@@ -191,13 +191,13 @@ class TrainDP3Workspace:
                     batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
                     if train_sampling_batch is None:
                         train_sampling_batch = batch
-                
+                    exit()
                     # compute loss
                     t1_1 = time.time()
                     raw_loss, loss_dict = self.model.compute_loss(batch)
                     loss = raw_loss / cfg.training.gradient_accumulate_every
                     loss.backward()
-                    
+                    exit()
                     t1_2 = time.time()
 
                     # step optimizer

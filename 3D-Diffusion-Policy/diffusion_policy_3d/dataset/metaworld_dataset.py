@@ -151,14 +151,18 @@ class MetaworldCompliantDataset(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
-        img = sample['img'][:,].astype(np.uint8) # 128 x 128 x 3
-        compliant_img = sample['compliant_img'][:,].astype(np.uint8) # 360 x 640 x 3
+        img = sample['img'][:,].astype(np.uint8) # B x 128 x 128 x 3
+        compliant_img = sample['compliant_img'][:,].astype(np.uint8) # B x 360 x 640 x 3
 
-        # stack image and compliant image, assume single image TODO: double check if sequence
-        h, w = img.shape
-        resized_compliant_img = cv2.resize(compliant_img, (h, w))
-        combined_img = np.concatenate((img, resized_compliant_img), axis=2)
-        combined_img = np.transpose(combined_img, (2, 0, 1)) # H x W x 6 -> 6 x H x W
+        # resize compliant image then stack
+        b, h, w, c = img.shape
+        resized_compliant_imgs = []
+        for img in compliant_img:
+            resized_compliant_img = cv2.resize(img, (h, w), interpolation=cv2.INTER_AREA)
+            resized_compliant_imgs.append(resized_compliant_img)
+        resized_compliant_imgs = np.array(resized_compliant_imgs)
+        combined_img = np.concatenate((img, resized_compliant_imgs), axis=3)
+        combined_img = np.transpose(combined_img, (0, 3, 1, 2)) # B x H x W x 6 -> B x 6 x H x W
 
         data = {
             'obs': {

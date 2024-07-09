@@ -7,6 +7,7 @@ import copy
 from typing import Optional, Dict, Tuple, Union, List, Type
 from termcolor import cprint
 
+from torchvision.models import resnet18
 
 def create_mlp(
         input_dim: int,
@@ -294,22 +295,47 @@ class DP3CompliantEncoder(nn.Module):
         super().__init__()
         self.imagination_key = 'imagin_robot'
         self.state_key = 'agent_pos'
+        self.img_key = 'combined_img'
         self.n_output_channels = out_channel
         
         self.use_imagined_robot = self.imagination_key in observation_space.keys()
+        self.img_shape = observation_space[self.img_key]
         self.state_shape = observation_space[self.state_key]
         if self.use_imagined_robot:
             self.imagination_shape = observation_space[self.imagination_key]
         else:
             self.imagination_shape = None
             
-        
+        cprint(f"[DP3CompliantEncoder] combined image shape: {self.img_shape}", "yellow")
         cprint(f"[DP3CompliantEncoder] state shape: {self.state_shape}", "yellow")
         cprint(f"[DP3CompliantEncoder] imagination point shape: {self.imagination_shape}", "yellow")
         
 
         self.use_compliant_image = use_compliant_image
-        # TODO: create image resnet
+        
+        # model for rgb image
+        self.rgb_model = resnet18(pretrained=False)
+        rgb_num_features = self.rgb_model.fc.in_features
+        rgb_new_fc_layers = nn.Sequential(
+            nn.Linear(rgb_num_features, 512),
+            nn.ReLU(),
+            nn.Linear(512, self.n_output_channels)
+        )
+        self.rgb_model.fc = rgb_new_fc_layers
+
+        if self.use_compliant_image:
+            # model for compliant image
+            self.compliant_model = resnet18(pretrained=False)
+            compliant_num_features = self.compliant_model.fc.in_features
+            compliant_new_fc_layers = nn.Sequential(
+                nn.Linear(compliant_num_features, 512),
+                nn.ReLU(),
+                nn.Linear(512, self.n_output_channels)
+            )
+            self.compliant_model.fc = compliant_new_fc_layers
+            # change output shape
+            self.n_output_channels = self.n_output_channels * 2
+            
 
         if len(state_mlp_size) == 0:
             raise RuntimeError(f"State mlp size is empty")
@@ -326,19 +352,18 @@ class DP3CompliantEncoder(nn.Module):
 
 
     def forward(self, observations: Dict) -> torch.Tensor:
-        points = observations[self.point_cloud_key]
-        assert len(points.shape) == 3, cprint(f"point cloud shape: {points.shape}, length should be 3", "red")
-        if self.use_imagined_robot:
-            img_points = observations[self.imagination_key][..., :points.shape[-1]] # align the last dim
-            points = torch.concat([points, img_points], dim=1)
+        combined_img = observations[self.img_key]
+        assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
         
-        # points = torch.transpose(points, 1, 2)   # B * 3 * N
-        # points: B * 3 * (N + sum(Ni))
-        pn_feat = self.extractor(points)    # B * out_channel
+        # combined_img: B * 6 * H * W
+        rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
+        if self.use_compliant_image:
+            compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
+        img_feat = torch.catf([rgb_feat, compliant_feat], dim=-1)
             
         state = observations[self.state_key]
         state_feat = self.state_mlp(state)  # B * 64
-        final_feat = torch.cat([pn_feat, state_feat], dim=-1)
+        final_feat = torch.cat([img_feat, state_feat], dim=-1)
         return final_feat
 
 
