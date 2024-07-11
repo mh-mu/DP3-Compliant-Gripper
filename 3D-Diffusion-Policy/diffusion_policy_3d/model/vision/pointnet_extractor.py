@@ -317,9 +317,7 @@ class DP3CompliantEncoder(nn.Module):
         self.rgb_model = resnet18(pretrained=False)
         rgb_num_features = self.rgb_model.fc.in_features
         rgb_new_fc_layers = nn.Sequential(
-            nn.Linear(rgb_num_features, 512),
-            nn.ReLU(),
-            nn.Linear(512, self.n_output_channels)
+            nn.Linear(rgb_num_features, self.n_output_channels)
         )
         self.rgb_model.fc = rgb_new_fc_layers
 
@@ -328,15 +326,14 @@ class DP3CompliantEncoder(nn.Module):
             self.compliant_model = resnet18(pretrained=False)
             compliant_num_features = self.compliant_model.fc.in_features
             compliant_new_fc_layers = nn.Sequential(
-                nn.Linear(compliant_num_features, 512),
-                nn.ReLU(),
-                nn.Linear(512, self.n_output_channels)
+                nn.Linear(compliant_num_features, self.n_output_channels)
             )
             self.compliant_model.fc = compliant_new_fc_layers
-            # change output shape
-            self.n_output_channels = self.n_output_channels * 2
-            
-
+            self.relu = nn.ReLU()
+            self.fusion_fc = nn.Sequential(
+                nn.Linear(self.n_output_channels*2, self.n_output_channels)
+            )
+           
         if len(state_mlp_size) == 0:
             raise RuntimeError(f"State mlp size is empty")
         elif len(state_mlp_size) == 1:
@@ -352,18 +349,19 @@ class DP3CompliantEncoder(nn.Module):
 
 
     def forward(self, observations: Dict) -> torch.Tensor:
-        combined_img = observations[self.img_key]
+        combined_img = observations[self.img_key].float()
         assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
         
         # combined_img: B * 6 * H * W
         rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
         if self.use_compliant_image:
             compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
-            img_feat = torch.cat([rgb_feat, compliant_feat], dim=-1)
+            img_feat = self.relu(torch.cat([rgb_feat, compliant_feat], dim=-1))
+            img_feat = self.fusion_fc(img_feat)
         else:
             img_feat = rgb_feat
             
-        state = observations[self.state_key]
+        state = observations[self.state_key].float()
         state_feat = self.state_mlp(state)  # B * 64
         final_feat = torch.cat([img_feat, state_feat], dim=-1)
         return final_feat

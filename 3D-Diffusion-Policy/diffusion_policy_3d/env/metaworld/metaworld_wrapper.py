@@ -221,6 +221,7 @@ class MetaWorldEnv(gym.Env):
         resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
         resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
         obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
+        obs_combined_img = obs_combined_img.astype(np.float32) / 255
 
         obs_dict = {
             'combined_img': obs_combined_img,

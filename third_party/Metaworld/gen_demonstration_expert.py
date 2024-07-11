@@ -152,7 +152,7 @@ def main(args):
 	state_chunk_size = (100, state_arrays.shape[1])
 	full_state_chunk_size = (100, full_state_arrays.shape[1])
 	action_chunk_size = (100, action_arrays.shape[1])
-	zarr_data.create_dataset('combined_img', data=combined_img_arrays, chunks=combined_img_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
+	zarr_data.create_dataset('combined_img', data=combined_img_arrays, chunks=combined_img_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('full_state', data=full_state_arrays, chunks=full_state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('action', data=action_arrays, chunks=action_chunk_size, dtype='float32', overwrite=True, compressor=compressor)

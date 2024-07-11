@@ -102,6 +102,7 @@ class MetaworldCompliantDataset(BaseDataset):
         super().__init__()
         self.replay_buffer = ReplayBuffer.copy_from_path(
             zarr_path, keys=['state', 'action', 'combined_img'])
+            #zarr_path, keys=['state', 'action'])
 
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 
@@ -140,8 +141,8 @@ class MetaworldCompliantDataset(BaseDataset):
         data = {
             'action': self.replay_buffer['action'],
             'agent_pos': self.replay_buffer['state'][...,:],
-            'combined_img': self.replay_buffer['combined_img'],
         }
+        #'combined_img': self.replay_buffer['combined_img'],
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
         return normalizer
@@ -151,7 +152,7 @@ class MetaworldCompliantDataset(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
-        combined_img = sample['combined_img'][:,].astype(np.uint8) # B x 128 x 128 x 3
+        combined_img = sample['combined_img'][:,].astype(np.float32) # B x 128 x 128 x 3
 
         data = {
             'obs': {
