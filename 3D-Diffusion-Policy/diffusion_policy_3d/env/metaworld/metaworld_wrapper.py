@@ -7,6 +7,7 @@ import sys
 import metaworld
 import random
 import time
+import cv2
 
 from natsort import natsorted
 from termcolor import cprint
@@ -83,7 +84,13 @@ class MetaWorldEnv(gym.Env):
         self.compliant_gripper_urdf_path = '/home/mh2595/workspace/implicit_force_simulation/src/utils/FFF.urdf'
         gripper_k_dict = {
             'hammer-v2-goal-observable': [7e3, 1.4e4],
-            'assembly-v2-goal-observable': [1.5e3, 1.2e4]
+            'assembly-v2-goal-observable': [1.5e3, 1.2e4],
+            'push-v2-goal-observable': [6e3, 4e3],
+            'dial-turn-v2-goal-observable': [1.2e4, 1.5e4],
+            'button-press-topdown-v2-goal-observable': [6e4, 1.4e4],
+            'drawer-close-v2-goal-observable': [5e4, 7e3],
+            'handle-pull-side-v2-goal-observable': [1.2e4, 2.5e3],
+            'pick-place-v2-goal-observable': [5e3, 7e3]
         }
         if task_name not in gripper_k_dict:
             raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
@@ -91,28 +98,16 @@ class MetaWorldEnv(gym.Env):
         self.gripper_forces = []
     
         self.observation_space = spaces.Dict({
-            'image': spaces.Box(
+            'combined_img': spaces.Box(
                 low=0,
                 high=255,
-                shape=(3, self.image_size, self.image_size),
-                dtype=np.float32
-            ),
-            'depth': spaces.Box(
-                low=0,
-                high=255,
-                shape=(self.image_size, self.image_size),
+                shape=(6, self.image_size, self.image_size),
                 dtype=np.float32
             ),
             'agent_pos': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
                 shape=(self.obs_sensor_dim,),
-                dtype=np.float32
-            ),
-            'compliant_image': spaces.Box(
-                low=0,
-                high=255,
-                shape=(3, self.image_size, self.image_size),
                 dtype=np.float32
             ),
             'full_state': spaces.Box(
@@ -165,7 +160,7 @@ class MetaWorldEnv(gym.Env):
         '''
         # calculate combined external force
         extern_force = left_finger_forces[[0, 1]] + right_finger_forces[[0, 1]]
-        cprint(f'Gripper force: {left_finger_forces + right_finger_forces}', 'yellow')
+        #cprint(f'Gripper force: {left_finger_forces + right_finger_forces}', 'yellow')
         self.gripper_forces.append(left_finger_forces + right_finger_forces)
 
         return self.compliant_gripper.render_img(extern_force)
@@ -209,20 +204,27 @@ class MetaWorldEnv(gym.Env):
     def get_visual_obs(self):
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-        _, depth = self.get_point_cloud()
+
+        if obs_pixels.shape[0] != 3:
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
 
         # add compliant gripper image
         l_forces, r_forces = self.get_ee_contact_forces()
         compliant_img = self.render_compliant_image(l_forces, r_forces)
+        compliant_img = np.asarray(compliant_img) # h * w * c
+        # make compliant image square
+        obs_compliant_img = np.ones((640, 640, 3))*255
+        obs_compliant_img[140:500, :, :] = compliant_img
         
-        if obs_pixels.shape[0] != 3:
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
+        # combine rgb image with compliant image
+        _, h, w = obs_pixels.shape # c * h * w
+        resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
+        resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
+        obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
 
         obs_dict = {
-            'image': obs_pixels,
-            'depth': depth,
+            'combined_img': obs_combined_img,
             'agent_pos': robot_state,
-            'compliant_image': compliant_img,
         }
         return obs_dict
             
@@ -232,24 +234,31 @@ class MetaWorldEnv(gym.Env):
         raw_state, reward, done, env_info = self.env.step(action)
         self.cur_step += 1
 
-        cprint(f'\n\n\n\nCurrent Step: {self.cur_step}', 'green')
+        #cprint(f'\n\n\n\nCurrent Step: {self.cur_step}', 'green')
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-        _, depth = self.get_point_cloud()
+
+        if obs_pixels.shape[0] != 3:  # make channel first
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
 
         # add compliant gripper image
         l_forces, r_forces = self.get_ee_contact_forces()
         compliant_img = self.render_compliant_image(l_forces, r_forces)
+        compliant_img = np.asarray(compliant_img) # h * w * c
+        # make compliant image square
+        obs_compliant_img = np.ones((640, 640, 3))*255
+        obs_compliant_img[140:500, :, :] = compliant_img
         
-        if obs_pixels.shape[0] != 3:  # make channel first
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
+        # combine rgb image with compliant image
+        _, h, w = obs_pixels.shape # c * h * w
+        resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
+        resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
+        obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
 
         obs_dict = {
-            'image': obs_pixels,
-            'depth': depth,
+            'combined_img': obs_combined_img,
             'agent_pos': robot_state,
-            'compliant_image': compliant_img,
             'full_state': raw_state,
         }
 
@@ -265,23 +274,29 @@ class MetaWorldEnv(gym.Env):
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-        _, depth = self.get_point_cloud()
+
+        if obs_pixels.shape[0] != 3:
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
 
         # add compliant gripper image
         l_forces, r_forces = self.get_ee_contact_forces()
         compliant_img = self.render_compliant_image(l_forces, r_forces)
+        compliant_img = np.asarray(compliant_img) # h * w * c
+        # make compliant image square
+        obs_compliant_img = np.ones((640, 640, 3))*255
+        obs_compliant_img[140:500, :, :] = compliant_img
         
-        if obs_pixels.shape[0] != 3:
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
-
+        # combine rgb image with compliant image
+        _, h, w = obs_pixels.shape # c * h * w
+        resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
+        resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
+        obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
+        
         obs_dict = {
-            'image': obs_pixels,
-            'depth': depth,
+            'combined_img': obs_combined_img,
             'agent_pos': robot_state,
-            'compliant_image': compliant_img,
             'full_state': raw_obs,
         }
-
 
         return obs_dict
 

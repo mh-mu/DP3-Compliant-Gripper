@@ -32,6 +32,9 @@ from diffusion_policy_3d.common.pytorch_util import dict_apply, optimizer_to
 from diffusion_policy_3d.model.diffusion.ema_model import EMAModel
 from diffusion_policy_3d.model.common.lr_scheduler import get_scheduler
 
+from icecream import ic
+
+
 OmegaConf.register_new_resolver("eval", eval, replace=True)
 
 class TrainDP3Workspace:
@@ -180,6 +183,7 @@ class TrainDP3Workspace:
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
         for local_epoch_idx in range(cfg.training.num_epochs):
+            ic(local_epoch_idx, cfg.training.num_epochs)
             step_log = dict()
             # ========= train for this epoch ==========
             train_losses = list()
@@ -191,13 +195,12 @@ class TrainDP3Workspace:
                     batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
                     if train_sampling_batch is None:
                         train_sampling_batch = batch
-                    exit()
+                    
                     # compute loss
                     t1_1 = time.time()
                     raw_loss, loss_dict = self.model.compute_loss(batch)
                     loss = raw_loss / cfg.training.gradient_accumulate_every
                     loss.backward()
-                    exit()
                     t1_2 = time.time()
 
                     # step optimizer
@@ -245,7 +248,7 @@ class TrainDP3Workspace:
             # replace train_loss with epoch average
             train_loss = np.mean(train_losses)
             step_log['train_loss'] = train_loss
-
+            ic(train_loss)
             # ========= eval for this epoch ==========
             policy = self.model
             if cfg.training.use_ema:
@@ -254,6 +257,7 @@ class TrainDP3Workspace:
 
             # run rollout
             if (self.epoch % cfg.training.rollout_every) == 0 and RUN_ROLLOUT and env_runner is not None:
+                ic('Running rollouts')
                 t3 = time.time()
                 # runner_log = env_runner.run(policy, dataset=dataset)
                 runner_log = env_runner.run(policy)
@@ -266,6 +270,7 @@ class TrainDP3Workspace:
                 
             # run validation
             if (self.epoch % cfg.training.val_every) == 0 and RUN_VALIDATION:
+                ic('Running validation')
                 with torch.no_grad():
                     val_losses = list()
                     with tqdm.tqdm(val_dataloader, desc=f"Validation epoch {self.epoch}", 

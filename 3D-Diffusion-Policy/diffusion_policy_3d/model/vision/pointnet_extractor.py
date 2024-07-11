@@ -359,7 +359,9 @@ class DP3CompliantEncoder(nn.Module):
         rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
         if self.use_compliant_image:
             compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
-        img_feat = torch.catf([rgb_feat, compliant_feat], dim=-1)
+            img_feat = torch.cat([rgb_feat, compliant_feat], dim=-1)
+        else:
+            img_feat = rgb_feat
             
         state = observations[self.state_key]
         state_feat = self.state_mlp(state)  # B * 64

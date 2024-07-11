@@ -53,7 +53,7 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
         gripper_id = self.model.body_name2id('hand')
         gripper_rot_mat = self.data.body_xmat[gripper_id].reshape(3, 3)
 
-        cprint(f'Number of contacts: {self.data.ncon}', 'blue')
+        #cprint(f'Number of contacts: {self.data.ncon}', 'blue')
 
         for i in range(self.data.ncon):
             contact = self.data.contact[i]
@@ -64,13 +64,13 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
             # Print names of the bodies in contact
             body1_name = self.model.body_id2name(body1_id)
             body2_name = self.model.body_id2name(body2_id)
-            print(f'Bodies: {body1_name}, {body2_name}')
+            #print(f'Bodies: {body1_name}, {body2_name}')
 
             contact_force = np.zeros(6, dtype=np.float64)
             mujoco_py.functions.mj_contactForce(self.model, self.data, i, contact_force)
 
             np.set_printoptions(formatter={'float': '{:.2f}'.format})
-            print(f'Forces: {contact_force}')
+            #print(f'Forces: {contact_force}')
 
             # Convert contact force from contact frame to world frame
             contact_frame = np.array(contact.frame).reshape(3, 3)
@@ -79,11 +79,11 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
             if body1_id == target_body_id or body2_id == target_body_id:
                 # Convert contact force from world frame to gripper frame
                 contact_force_gripper = gripper_rot_mat.T @ contact_force_world
-                cprint(f'Recorded body name: {body_name} | Force (gripper frame): {contact_force_gripper}', 'cyan')
-                cprint(f'Contact location: {contact.pos[:]}', 'cyan')
+                #cprint(f'Recorded body name: {body_name} | Force (gripper frame): {contact_force_gripper}', 'cyan')
+                #cprint(f'Contact location: {contact.pos[:]}', 'cyan')
                 total_contact_force += contact_force_gripper
 
-        cprint(f'Given Body: {body_name} | Total contact force: {total_contact_force}', 'magenta')
+        #cprint(f'Given Body: {body_name} | Total contact force: {total_contact_force}', 'magenta')
 
         return total_contact_force
 

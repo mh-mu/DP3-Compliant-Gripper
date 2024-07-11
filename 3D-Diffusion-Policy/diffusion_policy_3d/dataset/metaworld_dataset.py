@@ -101,7 +101,8 @@ class MetaworldCompliantDataset(BaseDataset):
             ):
         super().__init__()
         self.replay_buffer = ReplayBuffer.copy_from_path(
-            zarr_path, keys=['state', 'action', 'img', 'compliant_img'])
+            zarr_path, keys=['state', 'action', 'combined_img'])
+
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 
             val_ratio=val_ratio,
@@ -139,8 +140,7 @@ class MetaworldCompliantDataset(BaseDataset):
         data = {
             'action': self.replay_buffer['action'],
             'agent_pos': self.replay_buffer['state'][...,:],
-            'img': self.replay_buffer['img'],
-            'compliant_img': self.replay_buffer['compliant_img'],
+            'combined_img': self.replay_buffer['combined_img'],
         }
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
@@ -151,18 +151,7 @@ class MetaworldCompliantDataset(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
-        img = sample['img'][:,].astype(np.uint8) # B x 128 x 128 x 3
-        compliant_img = sample['compliant_img'][:,].astype(np.uint8) # B x 360 x 640 x 3
-
-        # resize compliant image then stack
-        b, h, w, c = img.shape
-        resized_compliant_imgs = []
-        for img in compliant_img:
-            resized_compliant_img = cv2.resize(img, (h, w), interpolation=cv2.INTER_AREA)
-            resized_compliant_imgs.append(resized_compliant_img)
-        resized_compliant_imgs = np.array(resized_compliant_imgs)
-        combined_img = np.concatenate((img, resized_compliant_imgs), axis=3)
-        combined_img = np.transpose(combined_img, (0, 3, 1, 2)) # B x H x W x 6 -> B x 6 x H x W
+        combined_img = sample['combined_img'][:,].astype(np.uint8) # B x 128 x 128 x 3
 
         data = {
             'obs': {

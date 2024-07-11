@@ -7,6 +7,7 @@ from diffusion_policy_3d.env import MetaWorldEnv
 from termcolor import cprint
 import copy
 import imageio
+import cv2
 from metaworld.policies import *
 # import faulthandler
 # faulthandler.enable()
@@ -48,9 +49,7 @@ def main(args):
 	
 
 	total_count = 0
-	img_arrays = []
-	compliant_img_arrays = []
-	depth_arrays = []
+	combined_img_arrays = []
 	state_arrays = []
 	full_state_arrays = []
 	action_arrays = []
@@ -76,9 +75,7 @@ def main(args):
 		ep_success_times = 0
 		
 
-		img_arrays_sub = []
-		compliant_img_arrays_sub = []
-		depth_arrays_sub = []
+		combined_img_arrays_sub = []
 		state_arrays_sub = []
 		full_state_arrays_sub = []
 		action_arrays_sub = []
@@ -88,15 +85,10 @@ def main(args):
 
 			total_count_sub += 1
 			
-			obs_img = obs_dict['image']
+			obs_combined_img = obs_dict['combined_img']
 			obs_robot_state = obs_dict['agent_pos']
-			obs_compliant_img = obs_dict['compliant_image']
-			obs_depth = obs_dict['depth']
-   
 
-			img_arrays_sub.append(obs_img)
-			compliant_img_arrays_sub.append(obs_compliant_img)
-			depth_arrays_sub.append(obs_depth)
+			combined_img_arrays_sub.append(obs_combined_img)
 			state_arrays_sub.append(obs_robot_state)
 			full_state_arrays_sub.append(raw_state)
 			
@@ -120,9 +112,7 @@ def main(args):
 		else:
 			total_count += total_count_sub
 			episode_ends_arrays.append(copy.deepcopy(total_count)) # the index of the last step of the episode    
-			img_arrays.extend(copy.deepcopy(img_arrays_sub))
-			compliant_img_arrays.extend(copy.deepcopy(compliant_img_arrays_sub))
-			depth_arrays.extend(copy.deepcopy(depth_arrays_sub))
+			combined_img_arrays.extend(copy.deepcopy(combined_img_arrays_sub))
 			state_arrays.extend(copy.deepcopy(state_arrays_sub))
 			action_arrays.extend(copy.deepcopy(action_arrays_sub))
 			full_state_arrays.extend(copy.deepcopy(full_state_arrays_sub))
@@ -149,45 +139,35 @@ def main(args):
 	zarr_data = zarr_root.create_group('data')
 	zarr_meta = zarr_root.create_group('meta')
 	# save img, state, action arrays into data, and episode ends arrays into meta
-	img_arrays = np.stack(img_arrays, axis=0)
-	if img_arrays.shape[1] == 3: # make channel last
-		img_arrays = np.transpose(img_arrays, (0,2,3,1))
+	combined_img_arrays = np.stack(combined_img_arrays, axis=0)
+	if combined_img_arrays.shape[1] == 3: # make channel last
+		combined_img_arrays = np.transpose(combined_img_arrays, (0,2,3,1))
 	state_arrays = np.stack(state_arrays, axis=0)
 	full_state_arrays = np.stack(full_state_arrays, axis=0)
-	compliant_img_arrays = np.stack(compliant_img_arrays, axis=0)
-	if compliant_img_arrays.shape[1] == 3: # make channel last
-		compliant_img_arrays = np.transpose(compliant_img_arrays, (0,2,3,1))
-	depth_arrays = np.stack(depth_arrays, axis=0)
 	action_arrays = np.stack(action_arrays, axis=0)
 	episode_ends_arrays = np.array(episode_ends_arrays)
 
 	compressor = zarr.Blosc(cname='zstd', clevel=3, shuffle=1)
-	img_chunk_size = (100, img_arrays.shape[1], img_arrays.shape[2], img_arrays.shape[3])
+	combined_img_chunk_size = (100, combined_img_arrays.shape[1], combined_img_arrays.shape[2], combined_img_arrays.shape[3])
 	state_chunk_size = (100, state_arrays.shape[1])
 	full_state_chunk_size = (100, full_state_arrays.shape[1])
-	compliant_img_chunk_size = (100, compliant_img_arrays.shape[1], compliant_img_arrays.shape[2], compliant_img_arrays.shape[3])
-	depth_chunk_size = (100, depth_arrays.shape[1], depth_arrays.shape[2])
 	action_chunk_size = (100, action_arrays.shape[1])
-	zarr_data.create_dataset('img', data=img_arrays, chunks=img_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
+	zarr_data.create_dataset('combined_img', data=combined_img_arrays, chunks=combined_img_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('full_state', data=full_state_arrays, chunks=full_state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
-	zarr_data.create_dataset('compliant_img', data=compliant_img_arrays, chunks=compliant_img_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
-	zarr_data.create_dataset('depth', data=depth_arrays, chunks=depth_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('action', data=action_arrays, chunks=action_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_meta.create_dataset('episode_ends', data=episode_ends_arrays, dtype='int64', overwrite=True, compressor=compressor)
 
 	cprint(f'-'*50, 'cyan')
 	# print shape
-	cprint(f'img shape: {img_arrays.shape}, range: [{np.min(img_arrays)}, {np.max(img_arrays)}]', 'green')
-	cprint(f'compliant img shape: {compliant_img_arrays.shape}, range: [{np.min(compliant_img_arrays)}, {np.max(compliant_img_arrays)}]', 'green')
-	cprint(f'depth shape: {depth_arrays.shape}, range: [{np.min(depth_arrays)}, {np.max(depth_arrays)}]', 'green')
+	cprint(f'combined img shape: {combined_img_arrays.shape}, range: [{np.min(combined_img_arrays)}, {np.max(combined_img_arrays)}]', 'green')
 	cprint(f'state shape: {state_arrays.shape}, range: [{np.min(state_arrays)}, {np.max(state_arrays)}]', 'green')
 	cprint(f'full_state shape: {full_state_arrays.shape}, range: [{np.min(full_state_arrays)}, {np.max(full_state_arrays)}]', 'green')
 	cprint(f'action shape: {action_arrays.shape}, range: [{np.min(action_arrays)}, {np.max(action_arrays)}]', 'green')
 	cprint(f'Saved zarr file to {save_dir}', 'green')
 
 	# clean up
-	del img_arrays, state_arrays, compliant_img_arrays, action_arrays, episode_ends_arrays
+	del combined_img_arrays, state_arrays, action_arrays, episode_ends_arrays
 	del zarr_root, zarr_data, zarr_meta
 	del e
 

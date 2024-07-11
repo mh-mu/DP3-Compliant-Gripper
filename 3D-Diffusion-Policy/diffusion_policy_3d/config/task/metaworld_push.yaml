@@ -4,9 +4,9 @@ task_name: ${name}
 
 shape_meta: &shape_meta
   obs:
-    point_cloud:
-      shape: [512, 3]
-      type: point_cloud
+    combined_img:
+      shape: [6, 128, 128]
+      type: image
     agent_pos:
       shape: [9]
       type: low_dim
@@ -27,8 +27,8 @@ env_runner:
   use_point_crop: ${policy.use_point_crop}
 
 dataset:
-  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldDataset
-  zarr_path: data/metaworld_push_expert.zarr
+  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldCompliantDataset
+  zarr_path: /home/mh2595/workspace/implicit_force_simulation/data//metaworld_push_expert.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}

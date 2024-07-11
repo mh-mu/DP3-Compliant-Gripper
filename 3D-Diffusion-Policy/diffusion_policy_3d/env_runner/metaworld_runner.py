@@ -68,7 +68,7 @@ class MetaworldRunner(BaseRunner):
         env = self.env
 
         
-        for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in Metaworld {self.task_name} Pointcloud Env", leave=False, mininterval=self.tqdm_interval_sec):
+        for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in Metaworld {self.task_name} Compliantcloud Env", leave=False, mininterval=self.tqdm_interval_sec):
             
             # start rollout
             obs = env.reset()
@@ -85,7 +85,7 @@ class MetaworldRunner(BaseRunner):
 
                 with torch.no_grad():
                     obs_dict_input = {}
-                    obs_dict_input['point_cloud'] = obs_dict['point_cloud'].unsqueeze(0)
+                    obs_dict_input['combined_img'] = obs_dict['combined_img'].unsqueeze(0)
                     obs_dict_input['agent_pos'] = obs_dict['agent_pos'].unsqueeze(0)
                     action_dict = policy.predict_action(obs_dict_input)
 
