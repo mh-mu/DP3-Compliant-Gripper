@@ -298,6 +298,9 @@ class DP3CompliantEncoder(nn.Module):
         self.img_key = 'combined_img'
         self.n_output_channels = out_channel
         
+        print('----')
+        print(observation_space)
+
         self.use_imagined_robot = self.imagination_key in observation_space.keys()
         self.img_shape = observation_space[self.img_key]
         self.state_shape = observation_space[self.state_key]

@@ -90,7 +90,11 @@ class MetaWorldEnv(gym.Env):
             'button-press-topdown-v2-goal-observable': [6e4, 1.4e4],
             'drawer-close-v2-goal-observable': [5e4, 7e3],
             'handle-pull-side-v2-goal-observable': [1.2e4, 2.5e3],
-            'pick-place-v2-goal-observable': [5e3, 7e3]
+            'pick-place-v2-goal-observable': [5e3, 7e3],
+            'drawer-close-v2-goal-observable': [5e3, 7e3],
+            'push-back-v2-goal-observable': [5e3, 7e3],
+            'push-v2-goal-observable': [5e3, 7e3],
+            'pick-out-of-hole-v2-goal-observable': [400, 400],
         }
         if task_name not in gripper_k_dict:
             raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
@@ -100,7 +104,7 @@ class MetaWorldEnv(gym.Env):
         self.observation_space = spaces.Dict({
             'combined_img': spaces.Box(
                 low=0,
-                high=255,
+                high=1,
                 shape=(6, self.image_size, self.image_size),
                 dtype=np.float32
             ),
@@ -256,6 +260,7 @@ class MetaWorldEnv(gym.Env):
         resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
         resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
         obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
+        obs_combined_img = obs_combined_img.astype(np.float32) / 255
 
         obs_dict = {
             'combined_img': obs_combined_img,
@@ -292,6 +297,7 @@ class MetaWorldEnv(gym.Env):
         resized_obs_compliant_img = cv2.resize(obs_compliant_img, (h, w), interpolation=cv2.INTER_AREA)
         resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
         obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
+        obs_combined_img = obs_combined_img.astype(np.float32) / 255
         
         obs_dict = {
             'combined_img': obs_combined_img,

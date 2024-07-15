@@ -183,7 +183,7 @@ class TrainDP3Workspace:
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
         for local_epoch_idx in range(cfg.training.num_epochs):
-            ic(local_epoch_idx, cfg.training.num_epochs)
+            #ic(local_epoch_idx, cfg.training.num_epochs)
             step_log = dict()
             # ========= train for this epoch ==========
             train_losses = list()
@@ -248,7 +248,7 @@ class TrainDP3Workspace:
             # replace train_loss with epoch average
             train_loss = np.mean(train_losses)
             step_log['train_loss'] = train_loss
-            ic(train_loss)
+            #ic(train_loss)
             # ========= eval for this epoch ==========
             policy = self.model
             if cfg.training.use_ema:
