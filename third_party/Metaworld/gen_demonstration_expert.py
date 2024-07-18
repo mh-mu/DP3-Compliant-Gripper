@@ -50,6 +50,8 @@ def main(args):
 
 	total_count = 0
 	combined_img_arrays = []
+	point_cloud_arrays = []
+	depth_arrays = []
 	state_arrays = []
 	full_state_arrays = []
 	action_arrays = []
@@ -76,6 +78,8 @@ def main(args):
 		
 
 		combined_img_arrays_sub = []
+		point_cloud_arrays_sub = []
+		depth_arrays_sub = []
 		state_arrays_sub = []
 		full_state_arrays_sub = []
 		action_arrays_sub = []
@@ -87,8 +91,12 @@ def main(args):
 			
 			obs_combined_img = obs_dict['combined_img']
 			obs_robot_state = obs_dict['agent_pos']
+			obs_point_cloud = obs_dict['point_cloud']
+			obs_depth = obs_dict['depth']
 
 			combined_img_arrays_sub.append(obs_combined_img)
+			point_cloud_arrays_sub.append(obs_point_cloud)
+			depth_arrays_sub.append(obs_depth)
 			state_arrays_sub.append(obs_robot_state)
 			full_state_arrays_sub.append(raw_state)
 			
@@ -113,6 +121,8 @@ def main(args):
 			total_count += total_count_sub
 			episode_ends_arrays.append(copy.deepcopy(total_count)) # the index of the last step of the episode    
 			combined_img_arrays.extend(copy.deepcopy(combined_img_arrays_sub))
+			point_cloud_arrays.extend(copy.deepcopy(point_cloud_arrays_sub))
+			depth_arrays.extend(copy.deepcopy(depth_arrays_sub))
 			state_arrays.extend(copy.deepcopy(state_arrays_sub))
 			action_arrays.extend(copy.deepcopy(action_arrays_sub))
 			full_state_arrays.extend(copy.deepcopy(full_state_arrays_sub))
@@ -144,6 +154,8 @@ def main(args):
 		combined_img_arrays = np.transpose(combined_img_arrays, (0,2,3,1))
 	state_arrays = np.stack(state_arrays, axis=0)
 	full_state_arrays = np.stack(full_state_arrays, axis=0)
+	point_cloud_arrays = np.stack(point_cloud_arrays, axis=0)
+	depth_arrays = np.stack(depth_arrays, axis=0)
 	action_arrays = np.stack(action_arrays, axis=0)
 	episode_ends_arrays = np.array(episode_ends_arrays)
 
@@ -151,23 +163,29 @@ def main(args):
 	combined_img_chunk_size = (100, combined_img_arrays.shape[1], combined_img_arrays.shape[2], combined_img_arrays.shape[3])
 	state_chunk_size = (100, state_arrays.shape[1])
 	full_state_chunk_size = (100, full_state_arrays.shape[1])
+	point_cloud_chunk_size = (100, point_cloud_arrays.shape[1], point_cloud_arrays.shape[2])
+	depth_chunk_size = (100, depth_arrays.shape[1], depth_arrays.shape[2])
 	action_chunk_size = (100, action_arrays.shape[1])
 	zarr_data.create_dataset('combined_img', data=combined_img_arrays, chunks=combined_img_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('full_state', data=full_state_arrays, chunks=full_state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
+	zarr_data.create_dataset('point_cloud', data=point_cloud_arrays, chunks=point_cloud_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
+	zarr_data.create_dataset('depth', data=depth_arrays, chunks=depth_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_data.create_dataset('action', data=action_arrays, chunks=action_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 	zarr_meta.create_dataset('episode_ends', data=episode_ends_arrays, dtype='int64', overwrite=True, compressor=compressor)
 
 	cprint(f'-'*50, 'cyan')
 	# print shape
 	cprint(f'combined img shape: {combined_img_arrays.shape}, range: [{np.min(combined_img_arrays)}, {np.max(combined_img_arrays)}]', 'green')
+	cprint(f'point_cloud shape: {point_cloud_arrays.shape}, range: [{np.min(point_cloud_arrays)}, {np.max(point_cloud_arrays)}]', 'green')
+	cprint(f'depth shape: {depth_arrays.shape}, range: [{np.min(depth_arrays)}, {np.max(depth_arrays)}]', 'green')
 	cprint(f'state shape: {state_arrays.shape}, range: [{np.min(state_arrays)}, {np.max(state_arrays)}]', 'green')
 	cprint(f'full_state shape: {full_state_arrays.shape}, range: [{np.min(full_state_arrays)}, {np.max(full_state_arrays)}]', 'green')
 	cprint(f'action shape: {action_arrays.shape}, range: [{np.min(action_arrays)}, {np.max(action_arrays)}]', 'green')
 	cprint(f'Saved zarr file to {save_dir}', 'green')
 
 	# clean up
-	del combined_img_arrays, state_arrays, action_arrays, episode_ends_arrays
+	del combined_img_arrays, state_arrays,  point_cloud_arrays, action_arrays, episode_ends_arrays
 	del zarr_root, zarr_data, zarr_meta
 	del e
 
