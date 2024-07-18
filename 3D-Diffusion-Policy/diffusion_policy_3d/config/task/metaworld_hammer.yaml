@@ -7,6 +7,9 @@ shape_meta: &shape_meta
     combined_img:
       shape: [6, 128, 128]
       type: image
+    point_cloud:
+      shape: [512, 3]
+      type: point_cloud
     agent_pos:
       shape: [9]
       type: low_dim
@@ -27,7 +30,7 @@ env_runner:
   use_point_crop: ${policy.use_point_crop}
 
 dataset:
-  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldCompliantDataset
+  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldPcdCompliantDataset
   zarr_path: /home/mh2595/workspace/implicit_force_simulation/data/metaworld_hammer_expert.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}

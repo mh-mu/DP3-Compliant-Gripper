@@ -24,7 +24,7 @@ import shutil
 import time
 import threading
 from hydra.core.hydra_config import HydraConfig
-from diffusion_policy_3d.policy.dp3 import DP3, DP3Compliant
+from diffusion_policy_3d.policy.dp3 import DP3, DP3Compliant, DP3PcdCompliant
 from diffusion_policy_3d.dataset.base_dataset import BaseDataset
 from diffusion_policy_3d.env_runner.base_runner import BaseRunner
 from diffusion_policy_3d.common.checkpoint_util import TopKCheckpointManager
@@ -171,6 +171,8 @@ class TrainDP3Workspace:
 
         # device transfer
         device = torch.device(cfg.training.device)
+        #cprint(torch.cuda.is_available(), 'red')
+        #cprint(torch.__path__, 'red')
         self.model.to(device)
         if self.ema_model is not None:
             self.ema_model.to(device)
