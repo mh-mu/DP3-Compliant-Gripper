@@ -108,10 +108,22 @@ class MetaWorldEnv(gym.Env):
                 shape=(6, self.image_size, self.image_size),
                 dtype=np.float32
             ),
+            'depth': spaces.Box(
+                low=0,
+                high=255,
+                shape=(self.image_size, self.image_size),
+                dtype=np.float32
+            ),
             'agent_pos': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
                 shape=(self.obs_sensor_dim,),
+                dtype=np.float32
+            ),
+            'point_cloud': spaces.Box(
+                low=-np.inf,
+                high=np.inf,
+                shape=(self.num_points, 3),
                 dtype=np.float32
             ),
             'full_state': spaces.Box(
@@ -132,7 +144,8 @@ class MetaWorldEnv(gym.Env):
 
     def get_rgb(self):
         # cam names: ('topview', 'corner', 'corner2', 'corner3', 'behindGripper', 'gripperPOV')
-        img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="corner2", device_id=self.device_id)
+        # img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="corner2", device_id=self.device_id)
+        img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="implicitForceView", device_id=self.device_id)
         return img
     
     def get_ee_contact_forces(self):
@@ -208,6 +221,7 @@ class MetaWorldEnv(gym.Env):
     def get_visual_obs(self):
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
+        point_cloud, depth = self.get_point_cloud()
 
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -229,7 +243,9 @@ class MetaWorldEnv(gym.Env):
 
         obs_dict = {
             'combined_img': obs_combined_img,
+            'depth': depth,
             'agent_pos': robot_state,
+            'point_cloud': point_cloud,
         }
         return obs_dict
             
@@ -243,6 +259,7 @@ class MetaWorldEnv(gym.Env):
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
+        point_cloud, depth = self.get_point_cloud()
 
         if obs_pixels.shape[0] != 3:  # make channel first
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -264,7 +281,9 @@ class MetaWorldEnv(gym.Env):
 
         obs_dict = {
             'combined_img': obs_combined_img,
+            'depth': depth,
             'agent_pos': robot_state,
+            'point_cloud': point_cloud,
             'full_state': raw_state,
         }
 
@@ -280,6 +299,7 @@ class MetaWorldEnv(gym.Env):
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
+        point_cloud, depth = self.get_point_cloud()
 
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -301,7 +321,9 @@ class MetaWorldEnv(gym.Env):
         
         obs_dict = {
             'combined_img': obs_combined_img,
+            'depth': depth,
             'agent_pos': robot_state,
+            'point_cloud': point_cloud,
             'full_state': raw_obs,
         }
 

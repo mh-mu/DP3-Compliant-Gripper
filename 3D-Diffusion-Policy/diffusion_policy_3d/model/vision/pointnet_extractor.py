@@ -199,8 +199,6 @@ class PointNetEncoderXYZ(nn.Module):
         """
         self.input_pointcloud = input[0].detach()
 
-    
-
 
 class DP3Encoder(nn.Module):
     def __init__(self, 
@@ -282,8 +280,6 @@ class DP3Encoder(nn.Module):
         return self.n_output_channels
     
 
-
-
 class DP3CompliantEncoder(nn.Module):
     def __init__(self, 
                  observation_space: Dict, 
@@ -296,10 +292,11 @@ class DP3CompliantEncoder(nn.Module):
         self.imagination_key = 'imagin_robot'
         self.state_key = 'agent_pos'
         self.img_key = 'combined_img'
+        self.point_cloud_key = 'point_cloud'
         self.n_output_channels = out_channel
         
-        print('----')
-        print(observation_space)
+        # print('----')
+        # print(observation_space)
 
         self.use_imagined_robot = self.imagination_key in observation_space.keys()
         self.img_shape = observation_space[self.img_key]
@@ -323,6 +320,7 @@ class DP3CompliantEncoder(nn.Module):
             nn.Linear(rgb_num_features, self.n_output_channels)
         )
         self.rgb_model.fc = rgb_new_fc_layers
+        
 
         if self.use_compliant_image:
             # model for compliant image
@@ -363,6 +361,122 @@ class DP3CompliantEncoder(nn.Module):
             img_feat = self.fusion_fc(img_feat)
         else:
             img_feat = rgb_feat
+            
+        state = observations[self.state_key].float()
+        state_feat = self.state_mlp(state)  # B * 64
+        final_feat = torch.cat([img_feat, state_feat], dim=-1)
+        return final_feat
+
+
+    def output_shape(self):
+        return self.n_output_channels
+
+
+class DP3PcdCompliantEncoder(nn.Module):
+    def __init__(self, 
+                 observation_space: Dict, 
+                 img_crop_shape=None,
+                 out_channel=256,
+                 state_mlp_size=(64, 64), state_mlp_activation_fn=nn.ReLU,
+                 pointcloud_encoder_cfg=None,
+                 use_pc_color=False,
+                 pointnet_type='pointnet',
+                 use_compliant_image=False,
+                 ):
+        super().__init__()
+        self.imagination_key = 'imagin_robot'
+        self.state_key = 'agent_pos'
+        self.img_key = 'combined_img'
+        self.point_cloud_key = 'point_cloud'
+        self.n_output_channels = out_channel
+        
+        print('----')
+        print(observation_space)
+
+        self.use_imagined_robot = self.imagination_key in observation_space.keys()
+        self.point_cloud_shape = observation_space[self.point_cloud_key]
+        self.img_shape = observation_space[self.img_key]
+        self.state_shape = observation_space[self.state_key]
+        if self.use_imagined_robot:
+            self.imagination_shape = observation_space[self.imagination_key]
+        else:
+            self.imagination_shape = None
+        cprint(f"[DP3Encoder] point cloud shape: {self.point_cloud_shape}", "yellow")
+        cprint(f"[DP3CompliantEncoder] combined image shape: {self.img_shape}", "yellow")
+        cprint(f"[DP3CompliantEncoder] state shape: {self.state_shape}", "yellow")
+        cprint(f"[DP3CompliantEncoder] imagination point shape: {self.imagination_shape}", "yellow")
+        
+
+        self.use_compliant_image = use_compliant_image
+        
+        # model for rgb image
+        self.rgb_model = resnet18(pretrained=False)
+        rgb_num_features = self.rgb_model.fc.in_features
+        rgb_new_fc_layers = nn.Sequential(
+            nn.Linear(rgb_num_features, self.n_output_channels)
+        )
+        self.rgb_model.fc = rgb_new_fc_layers
+
+
+        # model for point net 
+        self.use_pc_color = use_pc_color
+        self.pointnet_type = pointnet_type
+        if pointnet_type == "pointnet":
+            if use_pc_color:
+                pointcloud_encoder_cfg.in_channels = 6
+                self.extractor = PointNetEncoderXYZRGB(**pointcloud_encoder_cfg)
+            else:
+                pointcloud_encoder_cfg.in_channels = 3
+                self.extractor = PointNetEncoderXYZ(**pointcloud_encoder_cfg)
+        else:
+            raise NotImplementedError(f"pointnet_type: {pointnet_type}")
+
+        self.fusion_fc = nn.Sequential(
+                nn.Linear(self.n_output_channels*2, self.n_output_channels)
+            )
+
+        if self.use_compliant_image:
+            # model for compliant image
+            self.compliant_model = resnet18(pretrained=False)
+            compliant_num_features = self.compliant_model.fc.in_features
+            compliant_new_fc_layers = nn.Sequential(
+                nn.Linear(compliant_num_features, self.n_output_channels)
+            )
+            self.compliant_model.fc = compliant_new_fc_layers
+            self.relu = nn.ReLU()
+            self.fusion_fc = nn.Sequential(
+                nn.Linear(self.n_output_channels*3, self.n_output_channels)
+            )
+           
+        if len(state_mlp_size) == 0:
+            raise RuntimeError(f"State mlp size is empty")
+        elif len(state_mlp_size) == 1:
+            net_arch = []
+        else:
+            net_arch = state_mlp_size[:-1]
+        output_dim = state_mlp_size[-1]
+
+        self.n_output_channels  += output_dim
+        self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+
+        cprint(f"[DP3CompliantEncoder] output dim: {self.n_output_channels}", "red")
+
+
+    def forward(self, observations: Dict) -> torch.Tensor:
+        points = observations[self.point_cloud_key].float()
+        combined_img = observations[self.img_key].float()
+        assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
+        pn_feat = self.extractor(points)    # B * out_channel
+        # combined_img: B * 6 * H * W
+        rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
+
+        if self.use_compliant_image:
+            compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
+            img_feat = self.relu(torch.cat([pn_feat, rgb_feat, compliant_feat], dim=-1))
+            img_feat = self.fusion_fc(img_feat)
+        else:
+            img_feat = self.relu(torch.cat([pn_feat, rgb_feat], dim=-1))
+            img_feat = self.fusion_fc(img_feat)
             
         state = observations[self.state_key].float()
         state_feat = self.state_mlp(state)  # B * 64
