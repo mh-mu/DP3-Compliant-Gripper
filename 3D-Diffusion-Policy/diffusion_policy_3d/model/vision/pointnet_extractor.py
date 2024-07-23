@@ -9,6 +9,8 @@ from termcolor import cprint
 
 from torchvision.models import resnet18
 
+from diffusion_policy_3d.common.model_util import print_params
+
 def create_mlp(
         input_dim: int,
         output_dim: int,
@@ -410,13 +412,33 @@ class DP3PcdCompliantEncoder(nn.Module):
         self.use_compliant_image = use_compliant_image
         
         # model for rgb image
-        self.rgb_model = resnet18(pretrained=False)
-        rgb_num_features = self.rgb_model.fc.in_features
-        rgb_new_fc_layers = nn.Sequential(
-            nn.Linear(rgb_num_features, self.n_output_channels)
-        )
-        self.rgb_model.fc = rgb_new_fc_layers
+        # self.rgb_model = resnet18(pretrained=False)
+        # rgb_num_features = self.rgb_model.fc.in_features
+        # rgb_new_fc_layers = nn.Sequential(
+        #     nn.Linear(rgb_num_features, self.n_output_channels)
+        # )
+        # self.rgb_model.fc = rgb_new_fc_layers
+        # print_params(self.rgb_model)
 
+        self.rgb_model = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+            )
+        print_params(self.rgb_model)
 
         # model for point net 
         self.use_pc_color = use_pc_color
@@ -425,28 +447,50 @@ class DP3PcdCompliantEncoder(nn.Module):
             if use_pc_color:
                 pointcloud_encoder_cfg.in_channels = 6
                 self.extractor = PointNetEncoderXYZRGB(**pointcloud_encoder_cfg)
+                print_params(self.extractor)
             else:
                 pointcloud_encoder_cfg.in_channels = 3
                 self.extractor = PointNetEncoderXYZ(**pointcloud_encoder_cfg)
+                print_params(self.extractor)
         else:
             raise NotImplementedError(f"pointnet_type: {pointnet_type}")
 
+        # combine output of rgb image and pc
         self.fusion_fc = nn.Sequential(
                 nn.Linear(self.n_output_channels*2, self.n_output_channels)
             )
+        self.relu = nn.ReLU()
 
         if self.use_compliant_image:
             # model for compliant image
-            self.compliant_model = resnet18(pretrained=False)
-            compliant_num_features = self.compliant_model.fc.in_features
-            compliant_new_fc_layers = nn.Sequential(
-                nn.Linear(compliant_num_features, self.n_output_channels)
-            )
-            self.compliant_model.fc = compliant_new_fc_layers
-            self.relu = nn.ReLU()
+            # self.compliant_model = resnet18(pretrained=False)
+            # compliant_num_features = self.compliant_model.fc.in_features
+            # compliant_new_fc_layers = nn.Sequential(
+            #     nn.Linear(compliant_num_features, self.n_output_channels)
+            # )
+            # self.compliant_model.fc = compliant_new_fc_layers
             self.fusion_fc = nn.Sequential(
                 nn.Linear(self.n_output_channels*3, self.n_output_channels)
             )
+            self.compliant_model = nn.Sequential(
+                    nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                    nn.ReLU(),
+                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                    nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                    nn.ReLU(),
+                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                    nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                    nn.ReLU(),
+                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                    nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                    nn.ReLU(),
+                    nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                    nn.Flatten(),
+                    nn.Linear(64, 128),
+                    nn.ReLU(),
+                    nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+                )
+            print_params(self.compliant_model)
            
         if len(state_mlp_size) == 0:
             raise RuntimeError(f"State mlp size is empty")
@@ -458,6 +502,7 @@ class DP3PcdCompliantEncoder(nn.Module):
 
         self.n_output_channels  += output_dim
         self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+        print_params(self.state_mlp)
 
         cprint(f"[DP3CompliantEncoder] output dim: {self.n_output_channels}", "red")
 
@@ -481,6 +526,7 @@ class DP3PcdCompliantEncoder(nn.Module):
         state = observations[self.state_key].float()
         state_feat = self.state_mlp(state)  # B * 64
         final_feat = torch.cat([img_feat, state_feat], dim=-1)
+        # final_feat = torch.cat([pn_feat, state_feat], dim=-1) # debug
         return final_feat
 
 

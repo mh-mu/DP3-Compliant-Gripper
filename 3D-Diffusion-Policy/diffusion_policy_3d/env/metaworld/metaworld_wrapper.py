@@ -143,8 +143,8 @@ class MetaWorldEnv(gym.Env):
         return np.concatenate([eef_pos, finger_right, finger_left])
 
     def get_rgb(self):
-        # cam names: ('topview', 'corner', 'corner2', 'corner3', 'behindGripper', 'gripperPOV')
-        # img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="corner2", device_id=self.device_id)
+        # cam names: ('topview', 'corner', 'corner2', 'corner3', 'behindGripper', 'gripperPOV', 'implicitForceView')
+        # img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="corner3", device_id=self.device_id)
         img = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="implicitForceView", device_id=self.device_id)
         return img
     

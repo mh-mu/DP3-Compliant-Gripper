@@ -530,7 +530,7 @@ class DP3Compliant(BasePolicy):
         nobs = self.normalizer.normalize(obs_dict)
         # use only the rgb image of the combined image (first 3 channels)
         if not self.use_compliant_image:
-            nobs['combined_img'] = nobs['combined_img'][..., :3]
+            nobs['combined_img'] = nobs['combined_img'][..., :3,:,:]
         this_n_img = nobs['combined_img']
         
         
@@ -607,9 +607,8 @@ class DP3Compliant(BasePolicy):
         # normalize input
         nobs = self.normalizer.normalize(batch['obs'])
         nactions = self.normalizer['action'].normalize(batch['action'])
-
-        if not self.use_compliant_image:
-            nobs['combined_img'] = nobs['combined_img'][..., :3]
+        # if not self.use_compliant_image:
+        #     nobs['combined_img'] = nobs['combined_img'][..., :3,:,:]
         
         batch_size = nactions.shape[0]
         horizon = nactions.shape[1]
@@ -885,8 +884,8 @@ class DP3PcdCompliant(BasePolicy):
         # normalize input
         nobs = self.normalizer.normalize(obs_dict)
         # use only the rgb image of the combined image (first 3 channels)
-        if not self.use_compliant_image:
-            nobs['combined_img'] = nobs['combined_img'][..., :3]
+        # if not self.use_compliant_image:
+        #     nobs['combined_img'] = nobs['combined_img'][..., :3,:,:]
         if not self.use_pc_color:
             nobs['point_cloud'] = nobs['point_cloud'][..., :3]
         
@@ -964,8 +963,8 @@ class DP3PcdCompliant(BasePolicy):
         nobs = self.normalizer.normalize(batch['obs'])
         nactions = self.normalizer['action'].normalize(batch['action'])
 
-        if not self.use_compliant_image:
-            nobs['combined_img'] = nobs['combined_img'][..., :3]
+        # if not self.use_compliant_image:
+        #     nobs['combined_img'] = nobs['combined_img'][..., :3,:,:]
         if not self.use_pc_color:
             nobs['point_cloud'] = nobs['point_cloud'][..., :3]
         
