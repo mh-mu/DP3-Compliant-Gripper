@@ -2,8 +2,22 @@ name: dial-turn
 
 task_name: ${name}
 
+# shape_meta: &shape_meta
+#   obs:
+#     point_cloud:
+#       shape: [512, 3]
+#       type: point_cloud
+#     agent_pos:
+#       shape: [9]
+#       type: low_dim
+#   action:
+#     shape: [4]
+
 shape_meta: &shape_meta
   obs:
+    combined_img:
+      shape: [6, 128, 128]
+      type: image
     point_cloud:
       shape: [512, 3]
       type: point_cloud
@@ -26,12 +40,23 @@ env_runner:
   device: ${training.device}
   use_point_crop: ${policy.use_point_crop}
 
+# dataset:
+#   _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldDataset
+#   zarr_path: data/metaworld_dial-turn_expert.zarr
+#   horizon: ${horizon}
+#   pad_before: ${eval:'${n_obs_steps}-1'}
+#   pad_after: ${eval:'${n_action_steps}-1'}
+#   seed: 42
+#   val_ratio: 0.02
+#   max_train_episodes: 90
+
 dataset:
-  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldDataset
-  zarr_path: data/metaworld_dial-turn_expert.zarr
+  _target_: diffusion_policy_3d.dataset.metaworld_dataset.MetaworldPcdCompliantDataset
+  zarr_path: /home/mh2595/workspace/implicit_force_simulation/data/metaworld_dial-turn_expert.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}
   seed: 42
   val_ratio: 0.02
   max_train_episodes: 90
+
