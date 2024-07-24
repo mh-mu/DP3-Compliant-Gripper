@@ -15,8 +15,9 @@ from gym import spaces
 from diffusion_policy_3d.gym_util.mujoco_point_cloud import PointCloudGenerator
 from diffusion_policy_3d.gym_util.mjpc_wrapper import point_cloud_sampling
 
-upper_repo_dir = '/home/mh2595/workspace/implicit_force_simulation'
-sys.path.insert(0, upper_repo_dir)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+comp_sim_dir = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir, os.pardir, os.pardir, os.pardir, os.pardir))
+sys.path.insert(0, comp_sim_dir)
 from src.utils.utils import CompliantGripper
 
 TASK_BOUDNS = {
@@ -81,7 +82,7 @@ class MetaWorldEnv(gym.Env):
         self.obs_sensor_dim = self.get_robot_state().shape[0]
 
         # Compliant gripper 
-        self.compliant_gripper_urdf_path = '/home/mh2595/workspace/implicit_force_simulation/src/utils/FFF.urdf'
+        self.compliant_gripper_urdf_path = os.path.join(comp_sim_dir, 'src/utils/FFF.urdf')
         gripper_k_dict = {
             'hammer-v2-goal-observable': [7e3, 1.4e4],
             'assembly-v2-goal-observable': [1.5e3, 1.2e4],
@@ -95,6 +96,7 @@ class MetaWorldEnv(gym.Env):
             'push-back-v2-goal-observable': [5e3, 7e3],
             'push-v2-goal-observable': [5e3, 7e3],
             'pick-out-of-hole-v2-goal-observable': [400, 400],
+            'box-close-v2-goal-observable': [4e4, 1.4e4]
         }
         if task_name not in gripper_k_dict:
             raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
@@ -159,8 +161,8 @@ class MetaWorldEnv(gym.Env):
             right_forces : np[(3, )]
                 Forces on the right finger in the contact frame
         '''
-        left_forces = self.env.get_body_contact_force('leftpad')
-        right_forces = self.env.get_body_contact_force('rightpad')
+        left_forces = self.env.get_body_contact_force('leftpad') + self.env.get_body_contact_force('leftclaw')
+        right_forces = self.env.get_body_contact_force('rightpad') + self.env.get_body_contact_force('rightclaw')
         return left_forces, right_forces
     
     def render_compliant_image(self, left_finger_forces, right_finger_forces):

@@ -132,7 +132,7 @@ def main(args):
 	# Write recorded compliant gripper forces to .npy file
 	gripper_force_id = 0
 	gripper_forces = np.array(e.gripper_forces)
-	dir = '/home/mh2595/workspace/implicit_force_simulation/trial_data'
+	dir = '../../../../../implicit_force_simulation/trial_data'
 	path = os.path.join(dir, 'gripper_forces_'+ env_name + str(gripper_force_id) +'.npy')
 	while os.path.exists(path):
 		gripper_force_id += 1
