@@ -98,7 +98,7 @@ class MetaWorldEnv(gym.Env):
             # 'pick-out-of-hole-v2-goal-observable': [400, 400],
             # 'box-close-v2-goal-observable': [4e4, 1.4e4],
             # 'drawer-open-v2-goal-observable': [4e4, 1.4e4],
-            'drawer-open-v2-goal-observable': [1.8e4, 4e3],
+            'drawer-open-v2-goal-observable': [1.8e4, 8e3],
         }
         if task_name not in gripper_k_dict:
             raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
