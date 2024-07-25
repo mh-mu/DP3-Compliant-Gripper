@@ -316,23 +316,46 @@ class DP3CompliantEncoder(nn.Module):
         self.use_compliant_image = use_compliant_image
         
         # model for rgb image
-        self.rgb_model = resnet18(pretrained=False)
-        rgb_num_features = self.rgb_model.fc.in_features
-        rgb_new_fc_layers = nn.Sequential(
-            nn.Linear(rgb_num_features, self.n_output_channels)
-        )
-        self.rgb_model.fc = rgb_new_fc_layers
+        self.rgb_model = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+            )
         
 
         if self.use_compliant_image:
             # model for compliant image
-            self.compliant_model = resnet18(pretrained=False)
-            compliant_num_features = self.compliant_model.fc.in_features
-            compliant_new_fc_layers = nn.Sequential(
-                nn.Linear(compliant_num_features, self.n_output_channels)
+            self.compliant_model = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
             )
-            self.compliant_model.fc = compliant_new_fc_layers
-            self.relu = nn.ReLU()
             self.fusion_fc = nn.Sequential(
                 nn.Linear(self.n_output_channels*2, self.n_output_channels)
             )
@@ -359,7 +382,8 @@ class DP3CompliantEncoder(nn.Module):
         rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
         if self.use_compliant_image:
             compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
-            img_feat = self.relu(torch.cat([rgb_feat, compliant_feat], dim=-1))
+            # img_feat = self.relu(torch.cat([rgb_feat, compliant_feat], dim=-1))
+            img_feat = torch.cat([rgb_feat, compliant_feat], dim=-1)
             img_feat = self.fusion_fc(img_feat)
         else:
             img_feat = rgb_feat

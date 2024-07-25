@@ -11,3 +11,5 @@ python gen_demonstration_expert.py --env_name=${task_name} \
             --num_episodes 5 \
             --root_dir "../../../../../implicit_force_simulation/data/" \
             #--root_dir "../../3D-Diffusion-Policy/data/" \
+            #
+            

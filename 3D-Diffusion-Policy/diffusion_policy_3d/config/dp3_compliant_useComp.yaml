@@ -1,7 +1,7 @@
 defaults:
   - task: metaworld_hammer
 
-name: train_dp3_compliant_pcd
+name: train_dp3_compliant
 
 task_name: ${task.name}
 shape_meta: ${task.shape_meta}
@@ -16,7 +16,7 @@ keypoint_visible_rate: 1.0
 obs_as_global_cond: True
 
 policy:
-  _target_: diffusion_policy_3d.policy.dp3.DP3PcdCompliant
+  _target_: diffusion_policy_3d.policy.dp3.DP3Compliant
   use_point_crop: true
   condition_type: film
   use_down_condition: true
@@ -54,16 +54,8 @@ policy:
   obs_as_global_cond: true
   shape_meta: ${shape_meta}
 
-  use_compliant_image: True
-  use_pc_color: false
-  pointnet_type: "pointnet"
+  use_compliant_image: True # False #True #
 
-  pointcloud_encoder_cfg:
-    in_channels: 3
-    out_channels: ${policy.encoder_output_dim}
-    use_layernorm: true
-    final_norm: layernorm # layernorm, none
-    normal_channel: false
 
 
 ema:
@@ -96,7 +88,7 @@ optimizer:
   weight_decay: 1.0e-6
 
 training:
-  device: "cuda"
+  device: "cuda:0"
   seed: 42
   debug: False
   resume: True
@@ -117,7 +109,7 @@ logging:
   group: ${exp_name}
   id: null
   mode: online
-  name: rgb_seed${training.seed}
+  name: hammer_rgbs_comp_20_${training.seed}
   project: dp3
   resume: true
   tags:
