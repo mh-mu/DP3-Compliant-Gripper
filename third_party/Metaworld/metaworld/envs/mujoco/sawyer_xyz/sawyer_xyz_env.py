@@ -77,6 +77,9 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
 
         #cprint(f'Given Body: {body_name} | Total contact force: {total_contact_force}', 'magenta')
 
+        # if force is larger than 100N, cap at 100N
+        # total_contact_force = np.clip(total_contact_force, -100, 100)
+
         return total_contact_force
 
     @property

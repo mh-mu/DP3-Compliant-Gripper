@@ -84,19 +84,21 @@ class MetaWorldEnv(gym.Env):
         # Compliant gripper 
         self.compliant_gripper_urdf_path = os.path.join(comp_sim_dir, 'src/utils/FFF.urdf')
         gripper_k_dict = {
-            'hammer-v2-goal-observable': [7e3, 1.4e4],
-            'assembly-v2-goal-observable': [1.5e3, 1.2e4],
-            'push-v2-goal-observable': [6e3, 4e3],
-            'dial-turn-v2-goal-observable': [1.2e4, 1.5e4],
-            'button-press-topdown-v2-goal-observable': [6e4, 1.4e4],
-            'drawer-close-v2-goal-observable': [5e4, 7e3],
-            'handle-pull-side-v2-goal-observable': [1.2e4, 2.5e3],
-            'pick-place-v2-goal-observable': [5e3, 7e3],
-            'drawer-close-v2-goal-observable': [5e3, 7e3],
-            'push-back-v2-goal-observable': [5e3, 7e3],
-            'push-v2-goal-observable': [5e3, 7e3],
-            'pick-out-of-hole-v2-goal-observable': [400, 400],
-            'box-close-v2-goal-observable': [4e4, 1.4e4]
+            # 'hammer-v2-goal-observable': [7e3, 1.4e4],
+            # 'assembly-v2-goal-observable': [1.5e3, 1.2e4],
+            # 'push-v2-goal-observable': [6e3, 4e3],
+            # 'dial-turn-v2-goal-observable': [1.2e4, 1.5e4],
+            # 'button-press-topdown-v2-goal-observable': [6e4, 1.4e4],
+            # 'drawer-close-v2-goal-observable': [5e4, 7e3],
+            # 'handle-pull-side-v2-goal-observable': [1.2e4, 2.5e3],
+            # 'pick-place-v2-goal-observable': [5e3, 7e3],
+            # 'drawer-close-v2-goal-observable': [5e3, 7e3],
+            # 'push-back-v2-goal-observable': [5e3, 7e3],
+            # 'push-v2-goal-observable': [5e3, 7e3],
+            # 'pick-out-of-hole-v2-goal-observable': [400, 400],
+            # 'box-close-v2-goal-observable': [4e4, 1.4e4],
+            # 'drawer-open-v2-goal-observable': [4e4, 1.4e4],
+            'drawer-open-v2-goal-observable': [1.8e4, 4e3],
         }
         if task_name not in gripper_k_dict:
             raise KeyError(f"Compliant gripper K is not defined for task '{task_name}'")
