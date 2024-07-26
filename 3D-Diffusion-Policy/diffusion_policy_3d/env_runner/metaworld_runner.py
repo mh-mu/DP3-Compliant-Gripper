@@ -13,6 +13,9 @@ from diffusion_policy_3d.env_runner.base_runner import BaseRunner
 import diffusion_policy_3d.common.logger_util as logger_util
 from termcolor import cprint
 
+import cv2
+import os
+
 class MetaworldRunner(BaseRunner):
     def __init__(self,
                  output_dir,
@@ -20,7 +23,7 @@ class MetaworldRunner(BaseRunner):
                  max_steps=1000,
                  n_obs_steps=8,
                  n_action_steps=8,
-                 fps=10,
+                 fps=30,
                  crf=22,
                  render_size=84,
                  tqdm_interval_sec=5.0,
@@ -59,7 +62,10 @@ class MetaworldRunner(BaseRunner):
         self.logger_util_test = logger_util.LargestKRecorder(K=3)
         self.logger_util_test10 = logger_util.LargestKRecorder(K=5)
 
-    def run(self, policy: BasePolicy, save_video=False):
+        self.video_save_dir = '../../../eval_videos'
+        os.makedirs(self.video_save_dir, exist_ok=True)
+
+    def run(self, policy: BasePolicy, save_video=True):
         device = policy.device
         dtype = policy.dtype
 
@@ -103,7 +109,50 @@ class MetaworldRunner(BaseRunner):
 
             all_success_rates.append(is_success)
             all_traj_rewards.append(traj_reward)
+
+            # save video
+            videos = np.array(env.env.get_video())
+            if len(videos.shape) == 5:
+                videos = videos[:, 0]  # select first frame
             
+            if save_video:
+                video_filename = os.path.join(self.video_save_dir, f'{self.task_name}{episode_idx}_{is_success}_.mp4')
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                num_frames = videos.shape[0]
+                _, height, width = videos.shape[1:]
+
+                out = cv2.VideoWriter(video_filename, fourcc, self.fps, (width*2, height))
+
+                for i in range(videos.shape[0]):
+
+                    rgb_image_array = videos[i][:3, :, :] # rgb images
+                    rgb_image_array = np.transpose(rgb_image_array, (1, 2, 0))
+
+                    image_array = videos[i][-3:, :, :] # compliant images
+                    image_array = np.transpose(image_array, (1, 2, 0))
+
+                    h, w, c = image_array.shape
+                    merged_image = np.ones((h, w*2, c)).astype('uint8')
+
+                    # Ensure image is in uint8 format (necessary for cv2.VideoWriter)
+                    image_array = (image_array * 255).astype('uint8')
+                    rgb_image_array = (rgb_image_array * 255).astype('uint8')
+                    # print(np.ptp(image_array))
+
+                    # Convert RGB to BGR (OpenCV uses BGR format)
+                    image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+                    rgb_image_array = cv2.cvtColor(rgb_image_array, cv2.COLOR_RGB2BGR)
+
+                    merged_image[:, 0:w, :] = rgb_image_array
+                    merged_image[:,w:2*w, :] = image_array
+
+                    # Write frame to video
+                    out.write(merged_image)
+
+                # Release video writer
+                out.release()
+
+                print(f"Eval video saved as {video_filename}")
 
         max_rewards = collections.defaultdict(list)
         log_data = dict()
@@ -119,15 +168,6 @@ class MetaworldRunner(BaseRunner):
         self.logger_util_test10.record(np.mean(all_success_rates))
         log_data['SR_test_L3'] = self.logger_util_test.average_of_largest_K()
         log_data['SR_test_L5'] = self.logger_util_test10.average_of_largest_K()
-        
-
-        videos = env.env.get_video()
-        if len(videos.shape) == 5:
-            videos = videos[:, 0]  # select first frame
-        
-        if save_video:
-            videos_wandb = wandb.Video(videos, fps=self.fps, format="mp4")
-            log_data[f'sim_video_eval'] = videos_wandb
 
         _ = env.reset()
         videos = None
