@@ -62,7 +62,7 @@ class MetaworldRunner(BaseRunner):
         self.logger_util_test = logger_util.LargestKRecorder(K=3)
         self.logger_util_test10 = logger_util.LargestKRecorder(K=5)
 
-        self.video_save_dir = '../../../eval_videos'
+        self.video_save_dir = f'../../../eval_videos/{self.task_name}/'
         os.makedirs(self.video_save_dir, exist_ok=True)
 
     def run(self, policy: BasePolicy, save_video=True):
