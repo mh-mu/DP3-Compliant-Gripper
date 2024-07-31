@@ -1,5 +1,5 @@
 import torch
-import gym
+import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -11,7 +11,7 @@ import cv2
 
 from natsort import natsorted
 from termcolor import cprint
-from gym import spaces
+from gymnasium import spaces
 from diffusion_policy_3d.gym_util.mujoco_point_cloud import PointCloudGenerator
 from diffusion_policy_3d.gym_util.mjpc_wrapper import point_cloud_sampling
 
@@ -296,6 +296,9 @@ class MetaWorldEnv(gym.Env):
         return obs_dict, reward, done, env_info
 
     def reset(self):
+        # # added for gymnasium
+        # super().reset(seed=seed)
+
         self.env.reset()
         self.env.reset_model()
         raw_obs = self.env.reset()

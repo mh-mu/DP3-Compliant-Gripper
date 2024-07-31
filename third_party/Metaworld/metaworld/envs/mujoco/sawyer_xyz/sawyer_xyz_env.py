@@ -2,8 +2,8 @@ import abc
 import copy
 import pickle
 
-from gym.spaces import Box
-from gym.spaces import Discrete
+from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete
 import mujoco_py
 import numpy as np
 from termcolor import cprint

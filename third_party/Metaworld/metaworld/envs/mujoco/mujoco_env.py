@@ -2,11 +2,11 @@ import abc
 import warnings
 
 import glfw
-from gym import error
-from gym.utils import seeding
+from gymnasium import error
+from gymnasium.utils import seeding
 import numpy as np
 from os import path
-import gym
+import gymnasium as gym
 
 try:
     import mujoco_py
