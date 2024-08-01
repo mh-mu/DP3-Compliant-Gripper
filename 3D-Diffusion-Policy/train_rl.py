@@ -72,7 +72,7 @@ def main(args):
 
     model = PPO("MultiInputPolicy", env, verbose=1, policy_kwargs=policy_kwargs)
     model.learn(total_timesteps=args.num_timesteps)
-    model.save(args.model_save_dir)
+    model.save(save_dir)
 
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
     print(f"Mean reward: {mean_reward} +/- {std_reward}")

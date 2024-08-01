@@ -127,13 +127,13 @@ class MetaWorldEnv(gym.Env):
             'point_cloud': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(self.num_points, 3),
+                shape=(self.num_points, 6), # 3 or 6?
                 dtype=np.float32
             ),
             'full_state': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(20, ),
+                shape=(39, ), #20 originally, but wrong?
                 dtype=np.float32
             ),
         })
@@ -286,9 +286,9 @@ class MetaWorldEnv(gym.Env):
         obs_dict = {
             'combined_img': obs_combined_img,
             'depth': depth,
-            'agent_pos': robot_state,
-            'point_cloud': point_cloud,
-            'full_state': raw_state,
+            'agent_pos': robot_state.astype(np.float32),
+            'point_cloud': point_cloud.astype(np.float32),
+            'full_state': raw_state.astype(np.float32),
         }
 
         done = done or self.cur_step >= self.episode_length
@@ -325,13 +325,13 @@ class MetaWorldEnv(gym.Env):
         resized_obs_compliant_img = np.transpose(resized_obs_compliant_img, (2,0,1)) # c * h * w
         obs_combined_img = np.concatenate((obs_pixels, resized_obs_compliant_img), axis=0)
         obs_combined_img = obs_combined_img.astype(np.float32) / 255
-        
+
         obs_dict = {
             'combined_img': obs_combined_img,
             'depth': depth,
-            'agent_pos': robot_state,
-            'point_cloud': point_cloud,
-            'full_state': raw_obs,
+            'agent_pos': robot_state.astype(np.float32),
+            'point_cloud': point_cloud.astype(np.float32),
+            'full_state': raw_obs.astype(np.float32),
         }
 
         return obs_dict
