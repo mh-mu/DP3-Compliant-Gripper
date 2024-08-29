@@ -77,7 +77,7 @@ class MetaWorldEnv(gym.Env):
         self.max_bound = [x_max, y_max, z_max]
         
     
-        self.episode_length = self._max_episode_steps = 200
+        self.episode_length = self._max_episode_steps = 100 #200
         self.action_space = self.env.action_space
         self.obs_sensor_dim = self.get_robot_state().shape[0]
 

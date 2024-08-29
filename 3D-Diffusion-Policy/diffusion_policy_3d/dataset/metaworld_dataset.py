@@ -172,7 +172,7 @@ class MetaworldCompliantDataset(BaseDataset):
 
 class MetaworldPcdCompliantDataset(BaseDataset):
     def __init__(self,
-            zarr_path, 
+            zarr_path,   
             horizon=1,
             pad_before=0,
             pad_after=0,
