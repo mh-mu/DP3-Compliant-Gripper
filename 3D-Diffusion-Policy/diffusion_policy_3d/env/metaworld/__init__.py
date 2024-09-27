@@ -1,1 +1,1 @@
-from .metaworld_wrapper import MetaWorldEnv
+from .metaworld_wrapper import MetaworldEnv
