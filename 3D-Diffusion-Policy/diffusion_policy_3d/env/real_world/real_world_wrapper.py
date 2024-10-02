@@ -11,17 +11,10 @@ import cv2
 from natsort import natsorted
 from termcolor import cprint
 from gymnasium import spaces
-from diffusion_policy_3d.gym_util.mujoco_point_cloud import PointCloudGenerator
-from diffusion_policy_3d.gym_util.mjpc_wrapper import point_cloud_sampling
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-comp_sim_dir = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir, os.pardir, os.pardir, os.pardir, os.pardir))
-sys.path.insert(0, comp_sim_dir)
-from src.utils.utils import CompliantGripper
-
-TASK_BOUDNS = {
-    'default': [-0.5, -1.5, -0.795, 1, -0.4, 100],
-}
+from third_party.UR5_IMPEDANCE.ur5_controller_wrapper import ur5ControlWrapper
+from .T42_controller import T42_controller
+from . import CONSTANTS
 
 class RealWorldEnv(gym.Env):
 
@@ -29,16 +22,14 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 100
-        self.act_dim = 6
+        self.episode_length = self._max_episode_steps = 200
+        self.act_dim = 7
         self.action_space = spaces.Box(
             low=-1.0,
             high=1.0,
             shape=(self.act_dim,),
             dtype=np.float64
         )
-        self.obs_sensor_dim = self.get_robot_state().shape[0]
-
         self.image_size = 128
         self.observation_space = spaces.Dict({
             'wrist_img': spaces.Box(
@@ -47,40 +38,51 @@ class RealWorldEnv(gym.Env):
                 shape=(6, self.image_size, self.image_size),
                 dtype=np.float32
             ),
-            'forces': spaces.Box(
+            'force': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(6, ),
+                shape=(3, ),
                 dtype=np.float32
             ),
-            'agent_pos': spaces.Box(
+            'state': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(self.obs_sensor_dim,),
-                dtype=np.float32
-            ),
-            'full_state': spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(39, ),  # TODO: what dimension
+                shape=(11, ),
                 dtype=np.float32
             ),
         })
 
+        self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.ur5_ip,
+                        ft_sensor=None)
+        self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+
     def get_robot_state(self):
-        # TODO: get end effector position, get finger motor positions
-        eef_pos = None
-        finger_right, finger_left = None
-        return np.concatenate([eef_pos, finger_right, finger_left])
+        '''
+        8 elements, ee position and orientation(6), finger motor positions(2)
+        '''
+        eef_pos = self.ur5_controller.get_ee_position()
+        finger_positions, _ = self.gripper.read_motor_positions()
+        return np.concatenate([eef_pos, finger_positions])
 
     def get_rgb(self):
-        # TODO: get img from wrist cam
-        img = None
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Error: Could not open webcam.")
+            exit()
+        ret, img = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+        cap.release()
         return img
+    
+    def get_robot_force(self):
+        force = self.ur5_controller.get_EE_wrench()[0:3]
+        return np.array(force)
 
     def get_visual_obs(self):
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
+        robot_force = self.get_robot_force()
 
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -89,45 +91,27 @@ class RealWorldEnv(gym.Env):
 
         obs_dict = {
             'wrist_img': obs_pixels,
-            'agent_pos': robot_state,
+            'force': robot_force,
+            'state': robot_state,
         }
         return obs_dict
             
             
     def step(self, action: np.array):
 
-        raw_state, reward, done, env_info = self.env.step(action)
+        # perform actions
+        self.ur5_controller.set_EE_transform_delta(action[:6])
+        gripper_action = action[-1]
+        if gripper_action == 1:
+            self.gripper.close()
+        else:
+            self.gripper.release()
+
         self.cur_step += 1
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
-
-        if obs_pixels.shape[0] != 3:  # make channel first
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
-
-        obs_pixels = obs_pixels.astype(np.float32) / 255 # normalize
-
-        obs_dict = {
-            'wrist_img': obs_pixels,
-            'agent_pos': robot_state.astype(np.float32),
-            'full_state': raw_state.astype(np.float32),
-        }
-
-        done = done or self.cur_step >= self.episode_length
-        
-        return obs_dict, reward, done, env_info
-
-    def reset(self):
-        # # added for gymnasium
-        # super().reset(seed=seed)
-
-        self.env.reset()
-        self.env.reset_model()
-        raw_obs = self.env.reset()
-        self.cur_step = 0
-
-        obs_pixels = self.get_rgb()
-        robot_state = self.get_robot_state()
+        robot_force = self.get_robot_force()
 
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -136,8 +120,36 @@ class RealWorldEnv(gym.Env):
 
         obs_dict = {
             'wrist_img': obs_pixels,
-            'agent_pos': robot_state.astype(np.float32),
-            'full_state': raw_obs.astype(np.float32),
+            'force': robot_force,
+            'state': robot_state,
+        }
+
+        done = self.cur_step >= self.episode_length
+        
+        return obs_dict, None, done, None
+
+    def reset(self):
+        # # added for gymnasium
+        # super().reset(seed=seed)
+
+        self.ur5_controller.set_EE_transform() # TODO: go to home position
+        self.gripper.release()
+
+        self.cur_step = 0
+
+        obs_pixels = self.get_rgb()
+        robot_state = self.get_robot_state()
+        robot_force = self.get_robot_force()
+
+        if obs_pixels.shape[0] != 3:
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
+
+        obs_pixels = obs_pixels.astype(np.float32) / 255
+
+        obs_dict = {
+            'wrist_img': obs_pixels,
+            'force': robot_force,
+            'state': robot_state,
         }
 
         return obs_dict

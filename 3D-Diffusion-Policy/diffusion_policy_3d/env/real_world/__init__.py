@@ -1,1 +1,1 @@
-from .real_world_wrapper import MetaWorldEnv
+from .real_world_wrapper import RealWorldEnv
