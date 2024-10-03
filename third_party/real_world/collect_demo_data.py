@@ -15,6 +15,7 @@ from metaworld.policies import *
 import pyspacemouse
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
+from diffusion_policy_3d.env.real_world import CONSTANTS
 
 seed = np.random.randint(0, 100)
 
@@ -82,11 +83,14 @@ def main(args):
 			if if_spacemouse_success:
 				spacemouse_state = pyspacemouse.read()
 				trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z])/[15, 15, 15]
-				trans = se3.translation(trans)
 				rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * 5
-				rot = Rotation.from_euler('xyz', rot_rad, degrees=True).as_matrix()
-				rot = so3.from_matrix(rot)
-				action = (rot, trans)
+				if spacemouse_state.buttons[0] == 1:
+					gripper_action = CONSTANTS.OPEN
+				elif spacemouse_state.buttons[1] == 1:
+					gripper_action = CONSTANTS.CLOSE
+				else:
+					gripper_action = CONSTANTS.STAY
+				action = [rot_rad, trans, gripper_action]
 			else:
 				cprint(f'Error: Spacemouse not reading', 'red')
 				action = np.zeros(7)

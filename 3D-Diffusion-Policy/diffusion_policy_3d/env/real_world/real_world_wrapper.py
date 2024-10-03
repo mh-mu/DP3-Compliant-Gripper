@@ -15,6 +15,8 @@ from gymnasium import spaces
 from third_party.UR5_IMPEDANCE.ur5_controller_wrapper import ur5ControlWrapper
 from .T42_controller import T42_controller
 from . import CONSTANTS
+from scipy.spatial.transform import Rotation
+from klampt.math import so3, se3
 
 class RealWorldEnv(gym.Env):
 
@@ -55,6 +57,7 @@ class RealWorldEnv(gym.Env):
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.ur5_ip,
                         ft_sensor=None)
         self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+        
 
     def get_robot_state(self):
         '''
@@ -100,11 +103,16 @@ class RealWorldEnv(gym.Env):
     def step(self, action: np.array):
 
         # perform actions
-        self.ur5_controller.set_EE_transform_delta(action[:6])
+        rot_rad = action[:3]
+        rot = Rotation.from_euler('xyz', rot_rad, degrees=True).as_matrix()
+        rot = so3.from_matrix(rot)
+        trans = action[2:6]
+        trans = se3.translation(trans)
+        self.ur5_controller.set_EE_transform_delta((rot, trans))
         gripper_action = action[-1]
-        if gripper_action == 1:
+        if gripper_action == CONSTANTS.CLOSE:
             self.gripper.close()
-        else:
+        elif gripper_action == CONSTANTS.OPEN:
             self.gripper.release()
 
         self.cur_step += 1
