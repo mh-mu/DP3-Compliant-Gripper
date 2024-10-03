@@ -14,9 +14,10 @@ R_default = [0, 0, -1, math.sqrt(2)/2, math.sqrt(2)/2, 0, math.sqrt(2)/2, -math.
 ft_ip = 'http://192.168.0.102:80'
 gripper_port = '/dev/ttyUSB0'
 finger_zero_positions = [0.0675, 0.17] #[0.0725, 0.175] #[0.075, 0.18] #[0.065, 0.175] #[0.0775, 0.1845] #[0.08, 0.1875] #[0.085, 0.19] (2nd, current calibration pic) #[0.095, 0.2] (initial)
+
 UR5_ip = '192.168.0.101'
+UR5_home_position = (R_default, t_pickup)
 
 # gripper actions
 OPEN = 0
 CLOSE = 1
-STAY = -1

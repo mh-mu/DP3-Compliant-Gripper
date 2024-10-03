@@ -16,6 +16,7 @@ import pyspacemouse
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from diffusion_policy_3d.env.real_world import CONSTANTS
+import keyboard
 
 seed = np.random.randint(0, 100)
 
@@ -55,6 +56,10 @@ def main(args):
 	
 	# loop over episodes
 	while episode_idx < num_episodes:
+		cprint(f'Press any key to begin episode {episode_idx}', 'on_yellow')
+		keyboard.wait()
+
+		e.reset()
 
 		obs_dict = e.get_visual_obs()
 
@@ -67,14 +72,11 @@ def main(args):
 		total_count_sub = 0
   
 		while not done:
-			# TODO: fix the loop at certain rate
-
 			total_count_sub += 1
 			
 			obs_wrist_img = obs_dict['wrist_img']
 			obs_force = obs_dict['force']
 			obs_robot_state = obs_dict['state']
-            
 
 			wrist_img_arrays_sub.append(obs_wrist_img)
 			force_arrays_sub.append(obs_force)
@@ -84,13 +86,12 @@ def main(args):
 				spacemouse_state = pyspacemouse.read()
 				trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z])/[15, 15, 15]
 				rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * 5
+				rot_vec = Rotation.from_euler('xyz', rot_rad, degrees=True).as_rotvec()
 				if spacemouse_state.buttons[0] == 1:
 					gripper_action = CONSTANTS.OPEN
 				elif spacemouse_state.buttons[1] == 1:
 					gripper_action = CONSTANTS.CLOSE
-				else:
-					gripper_action = CONSTANTS.STAY
-				action = [rot_rad, trans, gripper_action]
+				action = [rot_vec, trans, gripper_action]
 			else:
 				cprint(f'Error: Spacemouse not reading', 'red')
 				action = np.zeros(7)
@@ -99,7 +100,6 @@ def main(args):
 			obs_dict, reward, done, info = e.step(action)
    
 			if done:
-				e.ur5_controller.close() # TODO: close here or no?
 				break
 
 		total_count += total_count_sub
@@ -110,19 +110,9 @@ def main(args):
 		action_arrays.extend(copy.deepcopy(action_arrays_sub))
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
-	
-	# Write recorded compliant gripper forces to .npy file
-	gripper_force_id = 0
-	gripper_forces = np.array(e.gripper_forces)
-	dir = '../../../../../implicit_force_simulation/trial_data'
-	path = os.path.join(dir, 'gripper_forces_'+ env_name + str(gripper_force_id) +'.npy')
-	while os.path.exists(path):
-		gripper_force_id += 1
-		path = os.path.join(dir, 'gripper_forces_'+ env_name + str(gripper_force_id) +'.npy')
-	np.save(path, gripper_forces)
-	print(f'Force range: {np.ptp(gripper_forces, axis=0)}')
 
-	# save data
+	e.ur5_controller.close()
+
  	###############################
     # save data
     ###############################
