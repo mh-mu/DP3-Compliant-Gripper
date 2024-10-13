@@ -17,6 +17,7 @@ from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from diffusion_policy_3d.env.real_world import CONSTANTS
 import keyboard
+from icecream import ic 
 
 seed = np.random.randint(0, 100)
 
@@ -37,7 +38,7 @@ def main(args):
 			return
 	os.makedirs(save_dir, exist_ok=True)
 
-	e = RealWorldEnv(env_name, device="cuda:0", use_point_crop=True)
+	e = RealWorldEnv(env_name, device="cuda:0")
 	
 	num_episodes = args.num_episodes
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
@@ -56,10 +57,11 @@ def main(args):
 	
 	# loop over episodes
 	while episode_idx < num_episodes:
-		cprint(f'Press any key to begin episode {episode_idx}', 'on_yellow')
-		keyboard.wait()
+		# cprint(f'Press any key to begin episode {episode_idx}', 'yellow')
+		# keyboard.wait()
 
 		e.reset()
+		prev_gripper_action = CONSTANTS.OPEN
 
 		obs_dict = e.get_visual_obs()
 
@@ -84,20 +86,24 @@ def main(args):
 			
 			if if_spacemouse_success:
 				spacemouse_state = pyspacemouse.read()
-				trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z])/[15, 15, 15]
-				rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * 5
+				trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z]) * e.trans_scale
+				rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * e.rot_scale
 				rot_vec = Rotation.from_euler('xyz', rot_rad, degrees=True).as_rotvec()
+
+				gripper_action = prev_gripper_action
 				if spacemouse_state.buttons[0] == 1:
 					gripper_action = CONSTANTS.OPEN
 				elif spacemouse_state.buttons[1] == 1:
 					gripper_action = CONSTANTS.CLOSE
-				action = [rot_vec, trans, gripper_action]
+				prev_gripper_action = gripper_action
+
+				action = np.concatenate((rot_vec, trans, [gripper_action]))
 			else:
 				cprint(f'Error: Spacemouse not reading', 'red')
 				action = np.zeros(7)
 		
 			action_arrays_sub.append(action)
-			obs_dict, reward, done, info = e.step(action)
+			obs_dict, _, done, _ = e.step(action)
    
 			if done:
 				break
@@ -111,6 +117,7 @@ def main(args):
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
 
+	# e.cap.release() # debug
 	e.ur5_controller.close()
 
  	###############################
@@ -158,7 +165,7 @@ def main(args):
 if __name__ == "__main__":
     
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--env_name', type=str, default='basketball')
+	parser.add_argument('--env_name', type=str, default='test')
 	parser.add_argument('--num_episodes', type=int, default=10)
 	parser.add_argument('--root_dir', type=str, default="../../3D-Diffusion-Policy/data/" )
 

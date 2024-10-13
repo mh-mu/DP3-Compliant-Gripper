@@ -17,6 +17,9 @@ finger_zero_positions = [0.0675, 0.17] #[0.0725, 0.175] #[0.075, 0.18] #[0.065, 
 
 UR5_ip = '192.168.0.101'
 UR5_home_position = (R_default, t_pickup)
+R_EE_WORLD_HOME = [0,0,-1, math.sqrt(2)/2,math.sqrt(2)/2,0,math.sqrt(2)/2,-math.sqrt(2)/2,0] #klampt format
+R_ATI_EE = [0, math.sqrt(2)/2,math.sqrt(2)/2, 0,math.sqrt(2)/2,-math.sqrt(2)/2, 1, 0, 0]
+HOME_t_obj = [-0.6, 0, 0.08] #[-0.5, 0, 0.08]
 
 # gripper actions
 OPEN = 0
