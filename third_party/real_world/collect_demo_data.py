@@ -11,8 +11,12 @@ import cv2
 from metaworld.policies import *
 # import faulthandler
 # faulthandler.enable()
+import sys, time
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'third_party', 'UR5_IMPEDANCE')))
 
 import pyspacemouse
+from vive_utils import *
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from diffusion_policy_3d.env.real_world import CONSTANTS
@@ -23,6 +27,7 @@ seed = np.random.randint(0, 100)
 
 def main(args):
 	env_name = args.env_name
+	demo_device = args.demo_device
 	
 	save_dir = os.path.join(args.root_dir, 'real-world_'+args.env_name+'_expert.zarr')
 	if os.path.exists(save_dir):
@@ -38,7 +43,7 @@ def main(args):
 			return
 	os.makedirs(save_dir, exist_ok=True)
 
-	e = RealWorldEnv(env_name, device="cuda:0")
+	e = RealWorldEnv(env_name, demo_device, device="cuda:0")
 	
 	num_episodes = args.num_episodes
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
@@ -54,6 +59,12 @@ def main(args):
     
 	
 	episode_idx = 0
+
+	if demo_device == 'vr':
+		init_openvr()
+		init_controllers()
+		time.sleep(1)
+		print("Vive Ready")
 	
 	# loop over episodes
 	while episode_idx < num_episodes:
@@ -84,23 +95,28 @@ def main(args):
 			force_arrays_sub.append(obs_force)
 			state_arrays_sub.append(obs_robot_state)
 			
-			if if_spacemouse_success:
-				spacemouse_state = pyspacemouse.read()
-				trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z]) * e.trans_scale
-				rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * e.rot_scale
-				rot_vec = Rotation.from_euler('xyz', rot_rad, degrees=True).as_rotvec()
+			if demo_device == 'spacemouse':
+				if if_spacemouse_success:
+					spacemouse_state = pyspacemouse.read()
+					trans = np.array([spacemouse_state.y, -spacemouse_state.x, spacemouse_state.z]) * e.trans_scale
+					rot_rad = np.array([spacemouse_state.roll, spacemouse_state.pitch, -spacemouse_state.yaw]) * e.rot_scale
+					rot_vec = Rotation.from_euler('xyz', rot_rad, degrees=True).as_rotvec()
 
-				gripper_action = prev_gripper_action
-				if spacemouse_state.buttons[0] == 1:
-					gripper_action = CONSTANTS.OPEN
-				elif spacemouse_state.buttons[1] == 1:
-					gripper_action = CONSTANTS.CLOSE
-				prev_gripper_action = gripper_action
+					gripper_action = prev_gripper_action
+					if spacemouse_state.buttons[0] == 1:
+						gripper_action = CONSTANTS.OPEN
+					elif spacemouse_state.buttons[1] == 1:
+						gripper_action = CONSTANTS.CLOSE
+					prev_gripper_action = gripper_action
 
-				action = np.concatenate((rot_vec, trans, [gripper_action]))
-			else:
-				cprint(f'Error: Spacemouse not reading', 'red')
-				action = np.zeros(7)
+					action = np.concatenate((rot_vec, trans, [gripper_action]))
+				else:
+					cprint(f'Error: Spacemouse not reading', 'red')
+					action = np.zeros(7)
+			elif demo_device == 'vr':
+				vr_pose = get_controller_pose()
+				if is_trigger_active():
+					action = vr_pose
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
@@ -166,6 +182,7 @@ if __name__ == "__main__":
     
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--env_name', type=str, default='test')
+	parser.add_argument('--demo_device', type=str, default='spacemouse')
 	parser.add_argument('--num_episodes', type=int, default=10)
 	parser.add_argument('--root_dir', type=str, default="../../3D-Diffusion-Policy/data/" )
 

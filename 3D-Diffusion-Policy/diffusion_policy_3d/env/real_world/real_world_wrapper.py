@@ -15,6 +15,7 @@ from gymnasium import spaces
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'UR5_IMPEDANCE')))
 
 from ur5_controller_wrapper import ur5ControlWrapper
+from vive_utils import *
 # from .T42_controller import T42_controller
 from . import CONSTANTS
 from scipy.spatial.transform import Rotation
@@ -23,7 +24,7 @@ from icecream import ic
 
 class RealWorldEnv(gym.Env):
 
-    def __init__(self, task_name, device="cuda:0", 
+    def __init__(self, task_name, demo_device, device="cuda:0", 
                  ):
         super(RealWorldEnv, self).__init__()
     
@@ -57,6 +58,10 @@ class RealWorldEnv(gym.Env):
             ),
         })
 
+        self.demo_device = demo_device
+        if self.demo_device not in ('spacemouse', 'vr'):
+            raise ValueError(f'Unrecognized demo device: {demo_device}. Device should be "spacemouse" or "vr".')
+
         # self.cap = cv2.VideoCapture(2) # debug
         # if not self.cap.isOpened():
         #     print("Error: Could not open webcam.")
@@ -65,11 +70,13 @@ class RealWorldEnv(gym.Env):
         # self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False) # debug
         self.step_frequency = 100
         self.step_period = 1 / self.step_frequency
-        # self.target_trans_vel = 200
-        # self.target_rot_vel = 10
-        self.trans_scale = 14 * self.step_period
-        self.rot_scale = 1e3 * self.step_period
-        
+
+        if self.demo_device == 'spacemouse':
+            self.trans_scale = 14 * self.step_period
+            self.rot_scale = 1e3 * self.step_period
+        elif self.demo_device == 'vr':
+            self.trans_scale = 14 * self.step_period # TODO: set scaling value
+            self.rot_scale = 1e3 * self.step_period
 
     def get_robot_state(self):
         '''
@@ -116,9 +123,11 @@ class RealWorldEnv(gym.Env):
         rot_vec = action[:3]
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
-        self.ur5_controller.set_EE_transform_delta((rot, trans))
-        ic(rot)
-        # ic(trans)
+
+        if self.demo_device == 'spacemouse':
+            self.ur5_controller.set_EE_transform_delta((rot, trans))
+        elif self.demo_device == 'vr':
+            self.ur5_controller.set_EE_transform_linear((rot, trans), max_trans_v=0.5, max_rotation_w=0.2)
         gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: # debug
         #     self.prev_gripper_pos = gripper_action
