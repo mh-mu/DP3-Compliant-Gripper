@@ -13,9 +13,10 @@ from termcolor import cprint
 from gymnasium import spaces
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'UR5_IMPEDANCE')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'UR5_Teleop')))
 
 from ur5_controller_wrapper import ur5ControlWrapper
-from vive_utils import *
+from vive_controller_teleop import *
 # from .T42_controller import T42_controller
 from . import CONSTANTS
 from scipy.spatial.transform import Rotation
@@ -28,7 +29,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 2000
+        self.episode_length = self._max_episode_steps = 10000
         self.act_dim = 7
         self.action_space = spaces.Box(
             low=-1.0,
@@ -68,15 +69,17 @@ class RealWorldEnv(gym.Env):
         #     exit()
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         # self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False) # debug
-        self.step_frequency = 100
+        self.step_frequency = 500
         self.step_period = 1 / self.step_frequency
 
         if self.demo_device == 'spacemouse':
             self.trans_scale = 14 * self.step_period
             self.rot_scale = 1e3 * self.step_period
         elif self.demo_device == 'vr':
-            self.trans_scale = 14 * self.step_period # TODO: set scaling value
-            self.rot_scale = 1e3 * self.step_period
+            # self.trans_scale = 1e3 * self.step_period # TODO: set scaling value
+            # self.rot_scale = 1e3 * self.step_period
+            self.trans_scale = 10
+            self.rot_scale = 10
 
     def get_robot_state(self):
         '''
@@ -124,10 +127,9 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        if self.demo_device == 'spacemouse':
-            self.ur5_controller.set_EE_transform_delta((rot, trans))
-        elif self.demo_device == 'vr':
-            self.ur5_controller.set_EE_transform_linear((rot, trans), max_trans_v=0.5, max_rotation_w=0.2)
+        # self.ur5_controller.set_EE_transform_delta((rot, trans))
+        self.ur5_controller.move_to_pose((rot, trans))
+        
         gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: # debug
         #     self.prev_gripper_pos = gripper_action
@@ -163,7 +165,7 @@ class RealWorldEnv(gym.Env):
         return obs_dict, None, done, None
 
     def reset(self):
-        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
+        # self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) # TODO: debugging, return to home position
         # self.gripper.release()
         self.prev_gripper_pos = CONSTANTS.OPEN
         self.ur5_controller.zero_ft_sensor()

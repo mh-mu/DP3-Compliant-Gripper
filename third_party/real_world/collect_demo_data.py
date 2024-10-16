@@ -8,15 +8,17 @@ from termcolor import cprint
 import copy
 import imageio
 import cv2
-from metaworld.policies import *
+# from metaworld.policies import *
 # import faulthandler
 # faulthandler.enable()
 import sys, time
+import openvr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'third_party', 'UR5_IMPEDANCE')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'third_party', 'UR5_Teleop')))
 
 import pyspacemouse
-from vive_utils import *
+from vive_controller_teleop import *
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from diffusion_policy_3d.env.real_world import CONSTANTS
@@ -48,23 +50,23 @@ def main(args):
 	num_episodes = args.num_episodes
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
 
-	if_spacemouse_success = pyspacemouse.open()
-
 	total_count = 0
 	wrist_img_arrays = []
 	force_arrays = []
 	state_arrays = []
 	action_arrays = []
 	episode_ends_arrays = []
-    
 	
 	episode_idx = 0
 
-	if demo_device == 'vr':
+	if demo_device == 'spacemouse':
+		if_spacemouse_success = pyspacemouse.open()
+	elif demo_device == 'vr':
 		init_openvr()
 		init_controllers()
 		time.sleep(1)
 		print("Vive Ready")
+		prev_vr_pose = get_controller_pose()
 	
 	# loop over episodes
 	while episode_idx < num_episodes:
@@ -114,9 +116,20 @@ def main(args):
 					cprint(f'Error: Spacemouse not reading', 'red')
 					action = np.zeros(7)
 			elif demo_device == 'vr':
-				vr_pose = get_controller_pose()
 				if is_trigger_active():
-					action = vr_pose
+					vr_pose = get_controller_pose()
+					delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
+					delta_rot = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
+					delta_trans = delta_T[:3, 3] * e.trans_scale
+
+					# TODO: track gripper action
+					gripper_action = CONSTANTS.OPEN
+
+					prev_vr_pose = vr_pose
+				
+					action = np.concatenate((delta_rot, delta_trans, [gripper_action]))
+				else:
+					action = np.zeros(7)
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
@@ -130,10 +143,12 @@ def main(args):
 		force_arrays.extend(copy.deepcopy(force_arrays_sub))
 		state_arrays.extend(copy.deepcopy(state_arrays_sub))
 		action_arrays.extend(copy.deepcopy(action_arrays_sub))
+		ic(len(action_arrays))
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
 
 	# e.cap.release() # debug
+	openvr.shutdown()
 	e.ur5_controller.close()
 
  	###############################
@@ -182,7 +197,7 @@ if __name__ == "__main__":
     
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--env_name', type=str, default='test')
-	parser.add_argument('--demo_device', type=str, default='spacemouse')
+	parser.add_argument('--demo_device', type=str, default='vr')
 	parser.add_argument('--num_episodes', type=int, default=10)
 	parser.add_argument('--root_dir', type=str, default="../../3D-Diffusion-Policy/data/" )
 
