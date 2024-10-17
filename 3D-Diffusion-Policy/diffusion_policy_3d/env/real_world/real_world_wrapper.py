@@ -29,7 +29,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 10000
+        self.episode_length = self._max_episode_steps = 5e3
         self.act_dim = 7
         self.action_space = spaces.Box(
             low=-1.0,
@@ -69,7 +69,7 @@ class RealWorldEnv(gym.Env):
         #     exit()
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         # self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False) # debug
-        self.step_frequency = 500
+        self.step_frequency = 200
         self.step_period = 1 / self.step_frequency
 
         if self.demo_device == 'spacemouse':
@@ -78,7 +78,7 @@ class RealWorldEnv(gym.Env):
         elif self.demo_device == 'vr':
             # self.trans_scale = 1e3 * self.step_period # TODO: set scaling value
             # self.rot_scale = 1e3 * self.step_period
-            self.trans_scale = 10
+            self.trans_scale = 20
             self.rot_scale = 10
 
     def get_robot_state(self):
@@ -127,8 +127,8 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        # self.ur5_controller.set_EE_transform_delta((rot, trans))
-        self.ur5_controller.move_to_pose((rot, trans))
+        ic(trans)
+        self.ur5_controller.set_EE_transform_delta((rot, trans))
         
         gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: # debug

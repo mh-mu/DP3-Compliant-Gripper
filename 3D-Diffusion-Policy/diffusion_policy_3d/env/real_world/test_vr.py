@@ -46,12 +46,13 @@ ur5 = ur5ControlWrapper(home_T=(R_EE_WORLD_HOME, HOME_t_obj) , ip=UR5_ip, ft_sen
 ur5.set_EE_transform(UR5_home_position)
 time.sleep(1)
 
-# init_openvr()
-# init_controllers()
-# time.sleep(1)
-# print("Vive Ready")
+init_openvr()
+init_controllers()
+time.sleep(1)
+print("Vive Ready")
 
-# print("UR5 Initialized")
+print("UR5 Initialized")
+
 # prev_pose = get_controller_pose()
 # for xz in range(10000):
 #     pose = get_controller_pose()
@@ -65,3 +66,23 @@ time.sleep(1)
 
 # openvr.shutdown()
 # ur5.close()
+
+prev_pose = get_controller_pose()
+for xz in range(10000):
+    pose = get_controller_pose()
+    
+    delta_pose = get_controller_pose_delta(pose, prev_pose)
+
+    rot_vec = Rotation.from_matrix(delta_pose[:3, :3]).as_rotvec()
+    delta_trans = delta_pose[:3, 3]
+    delta_rot = so3.from_rotation_vector(rot_vec)
+
+    delta_pose = (delta_rot, delta_trans)
+    
+    prev_pose = pose
+    if is_trigger_active():
+        ur5.set_EE_transform_delta(delta_pose)
+    time.sleep(0.1)
+
+openvr.shutdown()
+ur5.close()

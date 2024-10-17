@@ -116,20 +116,19 @@ def main(args):
 					cprint(f'Error: Spacemouse not reading', 'red')
 					action = np.zeros(7)
 			elif demo_device == 'vr':
+				vr_pose = get_controller_pose()
+				delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
+				delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
+				delta_trans = delta_T[:3, 3] * e.trans_scale
+
+				# TODO: track gripper action
+				gripper_action = CONSTANTS.OPEN
+
+				prev_vr_pose = vr_pose
 				if is_trigger_active():
-					vr_pose = get_controller_pose()
-					delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
-					delta_rot = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
-					delta_trans = delta_T[:3, 3] * e.trans_scale
-
-					# TODO: track gripper action
-					gripper_action = CONSTANTS.OPEN
-
-					prev_vr_pose = vr_pose
-				
-					action = np.concatenate((delta_rot, delta_trans, [gripper_action]))
+					action = np.concatenate((delta_rot_vec, delta_trans, [gripper_action]))
 				else:
-					action = np.zeros(7)
+					action = np.zeros(7) # TODO: gripper action not right
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
