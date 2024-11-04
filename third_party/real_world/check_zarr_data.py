@@ -1,5 +1,6 @@
 import zarr
 import matplotlib.pyplot as plt
+import numpy as np
 
 def read_zarr_folder(folder_path):
     try:
@@ -32,3 +33,16 @@ if __name__ == "__main__":
         plt.show()
         # zarr_data.tree()
         # print("Zarr data keys:", list(zarr_data.array_keys()))
+
+        # forces = zarr_data['data/force']
+        # index = np.arange(1500)
+
+        # plt.figure(figsize=(12, 6))
+        # plt.plot(index, forces[:, 0], label='X', color='r')
+        # plt.plot(index, forces[:, 1], label='Y', color='g')
+        # plt.plot(index, forces[:, 2], label='Z', color='b')
+
+        # plt.xlabel('Index')
+        # plt.ylabel('Force')
+        # plt.legend()
+        # plt.show()

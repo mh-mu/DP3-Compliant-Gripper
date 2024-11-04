@@ -67,13 +67,13 @@ class RealWorldEnv(gym.Env):
         if not self.cap.isOpened():
             print("Error: Could not open webcam.")
             exit()
+
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
-        self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+        self.gripper = T42_controller(CONSTANTS.finger_offset_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
         self.step_frequency = 30
         self.step_period = 1 / self.step_frequency
         self.target_trans_speed = 2e2
         self.target_rot_speed = 3e2
-
         if self.demo_device == 'spacemouse':
             self.trans_scale = 14 * self.step_period
             self.rot_scale = 1e3 * self.step_period
@@ -128,7 +128,6 @@ class RealWorldEnv(gym.Env):
         self.ur5_controller.set_EE_transform_delta((rot, trans))
         
         gripper_action = action[-1]
-        ic(gripper_action)
         if gripper_action != self.prev_gripper_pos: 
             self.prev_gripper_pos = gripper_action
             if gripper_action == CONSTANTS.CLOSE:
