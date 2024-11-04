@@ -121,14 +121,25 @@ def main(args):
 				delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
 				delta_trans = delta_T[:3, 3] * e.trans_scale
 
-				# TODO: track gripper action
-				gripper_action = CONSTANTS.OPEN
-
 				prev_vr_pose = vr_pose
 				if is_trigger_active():
-					action = np.concatenate((delta_rot_vec, delta_trans, [gripper_action]))
+					rot_action = delta_rot_vec
+					trans_action = delta_trans
 				else:
-					action = np.zeros(7) # TODO: gripper action not right
+					rot_action = np.zeros(3)
+					trans_action = np.zeros(3)
+
+				if is_trackpad_touched():
+					trackpad_x = get_trackpad_x_state()
+					if trackpad_x >= 0:
+						gripper_action = CONSTANTS.OPEN
+					else:
+						gripper_action = CONSTANTS.CLOSE
+				else:
+					gripper_action = prev_gripper_action
+				prev_gripper_action = gripper_action
+
+				action = np.concatenate((rot_action, trans_action, [gripper_action]))
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
@@ -146,7 +157,7 @@ def main(args):
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
 
-	# e.cap.release() # debug
+	e.cap.release()
 	openvr.shutdown()
 	e.ur5_controller.close()
 

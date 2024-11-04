@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 
 from ur5_controller_wrapper import ur5ControlWrapper
 from vive_controller_teleop import *
-# from .T42_controller import T42_controller
+from .T42_controller import T42_controller
 from . import CONSTANTS
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
@@ -29,7 +29,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 5e3
+        self.episode_length = self._max_episode_steps = 5e2
         self.act_dim = 7
         self.action_space = spaces.Box(
             low=-1.0,
@@ -63,38 +63,36 @@ class RealWorldEnv(gym.Env):
         if self.demo_device not in ('spacemouse', 'vr'):
             raise ValueError(f'Unrecognized demo device: {demo_device}. Device should be "spacemouse" or "vr".')
 
-        # self.cap = cv2.VideoCapture(2) # debug
-        # if not self.cap.isOpened():
-        #     print("Error: Could not open webcam.")
-        #     exit()
+        self.cap = cv2.VideoCapture(2)
+        if not self.cap.isOpened():
+            print("Error: Could not open webcam.")
+            exit()
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
-        # self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False) # debug
-        self.step_frequency = 200
+        self.gripper = T42_controller(CONSTANTS.finger_zero_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+        self.step_frequency = 30
         self.step_period = 1 / self.step_frequency
+        self.target_trans_speed = 2e2
+        self.target_rot_speed = 3e2
 
         if self.demo_device == 'spacemouse':
             self.trans_scale = 14 * self.step_period
             self.rot_scale = 1e3 * self.step_period
         elif self.demo_device == 'vr':
-            # self.trans_scale = 1e3 * self.step_period # TODO: set scaling value
-            # self.rot_scale = 1e3 * self.step_period
-            self.trans_scale = 20
-            self.rot_scale = 10
+            self.trans_scale = self.target_trans_speed / self.step_frequency
+            self.rot_scale = self.target_rot_speed / self.step_frequency
 
     def get_robot_state(self):
         '''
         8 elements, ee position and orientation(6), finger motor positions(2)
         '''
         eef_pos = self.ur5_controller.get_EE_transform()
-        # finger_positions, _ = self.gripper.read_motor_positions() # debug
-        finger_positions = np.zeros((2,)) # debug
+        finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
         return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), finger_positions])
 
     def get_rgb(self):
-        # ret, img = self.cap.read()
-        img = np.zeros((3, 128, 128)) # debug
-        # if not ret:
-        #     print("Error: Could not read webcam frame.")
+        ret, img = self.cap.read()
+        if not ret:
+            print("Error: Could not read webcam frame.")
         return img
     
     def get_robot_force(self):
@@ -127,16 +125,16 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        ic(trans)
         self.ur5_controller.set_EE_transform_delta((rot, trans))
         
         gripper_action = action[-1]
-        # if gripper_action != self.prev_gripper_pos: # debug
-        #     self.prev_gripper_pos = gripper_action
-        #     if gripper_action == CONSTANTS.CLOSE:
-        #         self.gripper.close()
-        #     elif gripper_action == CONSTANTS.OPEN:
-        #         self.gripper.release()
+        ic(gripper_action)
+        if gripper_action != self.prev_gripper_pos: 
+            self.prev_gripper_pos = gripper_action
+            if gripper_action == CONSTANTS.CLOSE:
+                self.gripper.close()
+            elif gripper_action == CONSTANTS.OPEN:
+                self.gripper.release()
 
         self.cur_step += 1
 
@@ -165,8 +163,8 @@ class RealWorldEnv(gym.Env):
         return obs_dict, None, done, None
 
     def reset(self):
-        # self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) # TODO: debugging, return to home position
-        # self.gripper.release()
+        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) 
+        self.gripper.release()
         self.prev_gripper_pos = CONSTANTS.OPEN
         self.ur5_controller.zero_ft_sensor()
 
