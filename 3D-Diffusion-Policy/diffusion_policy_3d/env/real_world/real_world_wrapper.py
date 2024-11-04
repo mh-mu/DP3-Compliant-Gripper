@@ -83,11 +83,11 @@ class RealWorldEnv(gym.Env):
 
     def get_robot_state(self):
         '''
-        8 elements, ee position and orientation(6), finger motor positions(2)
+        7 elements, ee position and orientation(6), fingers open or closed (1)
         '''
         eef_pos = self.ur5_controller.get_EE_transform()
-        finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
-        return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), finger_positions])
+        # finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
+        return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), self.gripper_state])
 
     def get_rgb(self):
         ret, img = self.cap.read()
@@ -132,8 +132,10 @@ class RealWorldEnv(gym.Env):
             self.prev_gripper_pos = gripper_action
             if gripper_action == CONSTANTS.CLOSE:
                 self.gripper.close()
+                self.gripper_state = CONSTANTS.CLOSE
             elif gripper_action == CONSTANTS.OPEN:
                 self.gripper.release()
+                self.gripper_state = CONSTANTS.OPEN
 
         self.cur_step += 1
 
@@ -164,6 +166,7 @@ class RealWorldEnv(gym.Env):
     def reset(self):
         self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) 
         self.gripper.release()
+        self.gripper_state = CONSTANTS.OPEN
         self.prev_gripper_pos = CONSTANTS.OPEN
         self.ur5_controller.zero_ft_sensor()
 

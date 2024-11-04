@@ -9,7 +9,7 @@ from diffusion_policy_3d.common.sampler import (
 from diffusion_policy_3d.model.common.normalizer import LinearNormalizer, SingleFieldLinearNormalizer
 from diffusion_policy_3d.dataset.base_dataset import BaseDataset
 
-class RealDexDataset(BaseDataset):
+class RealWorldDataset(BaseDataset):
     def __init__(self,
             zarr_path, 
             horizon=1,
