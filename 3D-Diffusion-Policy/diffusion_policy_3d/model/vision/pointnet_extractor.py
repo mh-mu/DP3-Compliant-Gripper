@@ -556,3 +556,125 @@ class DP3PcdCompliantEncoder(nn.Module):
 
     def output_shape(self):
         return self.n_output_channels
+    
+
+class DP3RealworldEncoder(nn.Module):
+    def __init__(self, 
+                 observation_space: Dict, 
+                 img_crop_shape=None,
+                 out_channel=256,
+                 state_mlp_size=(64, 64), state_mlp_activation_fn=nn.ReLU,
+                 use_compliant_image=False,
+                 use_force=False,
+                 ):
+        super().__init__()
+        self.imagination_key = 'imagin_robot'
+        self.state_key = 'state'
+        self.force_key = 'force'
+        self.rgb_image_key = 'wrists_img'
+        self.n_output_channels = out_channel
+        
+        self.use_imagined_robot = self.imagination_key in observation_space.keys()
+        self.img_shape = observation_space[self.rgb_image_key]
+        self.state_shape = observation_space[self.state_key]
+        self.force_shape = observation_space[self.force_key]
+        if self.use_imagined_robot:
+            self.imagination_shape = observation_space[self.imagination_key]
+        else:
+            self.imagination_shape = None
+            
+        
+        cprint(f"[DP3RealworldEncoder] image shape: {self.img_shape}", "yellow")
+        cprint(f"[DP3RealworldEncoder] force shape: {self.force_shape}", "yellow")
+        cprint(f"[DP3RealworldEncoder] state shape: {self.state_shape}", "yellow")
+
+        self.use_compliant_image = use_compliant_image
+        self.use_force = use_force
+        
+        # model for rgb image
+        self.rgb_model = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+            )
+        
+
+        if self.use_compliant_image:
+            # model for compliant image
+            self.compliant_model = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+            )
+            self.fusion_fc = nn.Sequential(
+                nn.Linear(self.n_output_channels*2, self.n_output_channels)
+            )
+
+
+        if len(state_mlp_size) == 0:
+            raise RuntimeError(f"State mlp size is empty")
+        elif len(state_mlp_size) == 1:
+            net_arch = []
+        else:
+            net_arch = state_mlp_size[:-1]
+        output_dim = state_mlp_size[-1]
+
+        self.n_output_channels  += output_dim
+        self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0] + self.force_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+
+        cprint(f"[DP3RealworldEncoder] output dim: {self.n_output_channels}", "red")
+
+
+    def forward(self, observations: Dict) -> torch.Tensor:
+        combined_img = observations[self.img_key].float()
+        assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
+        
+        # combined_img: B * 6 * H * W
+        rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
+        if self.use_compliant_image:
+            compliant_feat = self.compliant_model(combined_img[:, 3:, :, :]) # B * out_channel
+            # img_feat = self.relu(torch.cat([rgb_feat, compliant_feat], dim=-1))
+            img_feat = torch.cat([rgb_feat, compliant_feat], dim=-1)
+            img_feat = self.fusion_fc(img_feat)
+        else:
+            img_feat = rgb_feat
+            
+        state = observations[self.state_key]
+        if self.use_force:
+            force = observations[self.force_key]
+            state_force = torch.cat([state, force], dim=-1)
+            state_feat = self.state_mlp(state_force)  # B * 64
+        else:
+            state_feat = self.state_mlp(state)  # B * 64
+        final_feat = torch.cat([img_feat, state_feat], dim=-1)
+        return final_feat
+
+
+    def output_shape(self):
+        return self.n_output_channels
