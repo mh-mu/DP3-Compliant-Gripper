@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 import copy
+import icecream as ic
 
 from typing import Optional, Dict, Tuple, Union, List, Type
 from termcolor import cprint
@@ -571,7 +572,7 @@ class DP3RealworldEncoder(nn.Module):
         self.imagination_key = 'imagin_robot'
         self.state_key = 'state'
         self.force_key = 'force'
-        self.rgb_image_key = 'wrists_img'
+        self.rgb_image_key = 'wrist_img'
         self.n_output_channels = out_channel
         
         self.use_imagined_robot = self.imagination_key in observation_space.keys()

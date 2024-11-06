@@ -11,8 +11,8 @@ shape_meta: &shape_meta
     force:
       shape: [3]
       type: low_dimx
-    agent_pos:
-      shape: [6]
+    state:
+      shape: [7]
       type: low_dimx
   action:
     shape: [7]
