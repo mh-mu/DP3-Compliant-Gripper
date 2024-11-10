@@ -72,7 +72,8 @@ class RealWorldDataset(BaseDataset):
 
     def _sample_to_data(self, sample):
         state = sample['state'][:,].astype(np.float32) # (agent_posx2, block_posex3)
-        wrist_img = sample['wrist_img'][:,].astype(np.float32) # (T, 1024, 6)
+        # wrist_img = sample['wrist_img'][:,].astype(np.float32)
+        wrist_img = sample['wrist_img'][:,].astype(np.float32).transpose(0, 3, 1, 2) # TODO: where should be transpose be
         force = sample['force'][:,].astype(np.float32)
 
         data = {

@@ -1,4 +1,5 @@
 defaults:
+  - _self_
   - task: realworld_test
 
 name: train_dp3_realworld_test
@@ -68,14 +69,14 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 128
+  batch_size: 16
   num_workers: 8
   shuffle: True
   pin_memory: True
   persistent_workers: False
 
 val_dataloader:
-  batch_size: 128
+  batch_size: 16
   num_workers: 8
   shuffle: False
   pin_memory: True
@@ -95,7 +96,7 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 601
+  num_epochs: 401
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200
@@ -110,7 +111,7 @@ logging:
   group: ${exp_name}
   id: null
   mode: online
-  name: hammer_rgbs_20_${training.seed}
+  name: realworld_test_${training.seed}
   project: dp3
   resume: true
   tags:

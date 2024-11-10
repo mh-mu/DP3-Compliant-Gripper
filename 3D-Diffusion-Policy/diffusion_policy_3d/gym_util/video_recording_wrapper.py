@@ -21,13 +21,14 @@ class SimpleVideoRecordingWrapper(gym.Wrapper):
         self.step_count = 0
 
     def reset(self, **kwargs):
+        del kwargs['seed']
         obs = super().reset(**kwargs)
         self.frames = list()
 
         # frame = self.env.render(mode=self.mode)
-        frame = self.get_img()
+        # frame = self.get_img()
         # assert frame.dtype == np.uint8
-        self.frames.append(frame)
+        # self.frames.append(frame)
         
         self.step_count = 1
         return obs
@@ -37,9 +38,9 @@ class SimpleVideoRecordingWrapper(gym.Wrapper):
         self.step_count += 1
         
         # frame = self.env.render(mode=self.mode)
-        frame = self.get_img()
+        # frame = self.get_img()
         # assert frame.dtype == np.uint8
-        self.frames.append(frame)
+        # self.frames.append(frame)
         
         return result
 

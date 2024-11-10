@@ -12,7 +12,7 @@ shape_meta: &shape_meta
       shape: [3]
       type: low_dimx
     state:
-      shape: [7]
+      shape: [14]
       type: low_dimx
   action:
     shape: [7]

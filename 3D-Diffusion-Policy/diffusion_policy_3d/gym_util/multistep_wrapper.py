@@ -71,6 +71,7 @@ def aggregate(data, method='max'):
         elif method == 'mean':
             return np.mean(data)
         elif method == 'sum':
+            print(data)
             return np.sum(data)
         else:
             raise NotImplementedError()
@@ -151,10 +152,11 @@ class MultiStepWrapper(gym.Wrapper):
                 # truncation
                 done = True
             self.done.append(done)
-            self._add_info(info)
+            # self._add_info(info)
 
         observation = self._get_obs(self.n_obs_steps)
-        reward = aggregate(self.reward, self.reward_agg_method)
+        # reward = aggregate(self.reward, self.reward_agg_method)
+        reward = None
         done = aggregate(self.done, 'max')
         info = dict_take_last_n(self.info, self.n_obs_steps)
         return observation, reward, done, info

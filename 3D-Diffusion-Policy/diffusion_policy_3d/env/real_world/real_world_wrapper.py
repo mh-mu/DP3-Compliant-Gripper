@@ -63,13 +63,13 @@ class RealWorldEnv(gym.Env):
         if self.demo_device not in ('spacemouse', 'vr'):
             raise ValueError(f'Unrecognized demo device: {demo_device}. Device should be "spacemouse" or "vr".')
 
-        self.cap = cv2.VideoCapture(2)
-        if not self.cap.isOpened():
-            print("Error: Could not open webcam.")
-            exit()
+        # self.cap = cv2.VideoCapture(4)
+        # if not self.cap.isOpened():
+        #     print("Error: Could not open webcam.")
+        #     exit()
 
-        self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
-        self.gripper = T42_controller(CONSTANTS.finger_offset_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+        # self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
+        # self.gripper = T42_controller(CONSTANTS.finger_offset_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
         self.step_frequency = 30
         self.step_period = 1 / self.step_frequency
         self.target_trans_speed = 2e2
@@ -87,7 +87,7 @@ class RealWorldEnv(gym.Env):
         '''
         eef_pos = self.ur5_controller.get_EE_transform()
         # finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
-        return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), self.gripper_state])
+        return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), np.array([self.gripper_state])])
 
     def get_rgb(self):
         ret, img = self.cap.read()
@@ -125,33 +125,37 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        self.ur5_controller.set_EE_transform_delta((rot, trans))
+        # self.ur5_controller.set_EE_transform_delta((rot, trans))
+        ic(trans)
         
-        gripper_action = action[-1]
-        if gripper_action != self.prev_gripper_pos: 
-            self.prev_gripper_pos = gripper_action
-            if gripper_action == CONSTANTS.CLOSE:
-                self.gripper.close()
-                self.gripper_state = CONSTANTS.CLOSE
-            elif gripper_action == CONSTANTS.OPEN:
-                self.gripper.release()
-                self.gripper_state = CONSTANTS.OPEN
+        # gripper_action = action[-1]
+        # if gripper_action != self.prev_gripper_pos: 
+        #     self.prev_gripper_pos = gripper_action
+        #     if gripper_action == CONSTANTS.CLOSE:
+        #         self.gripper.close()
+        #         self.gripper_state = CONSTANTS.CLOSE
+        #     elif gripper_action == CONSTANTS.OPEN:
+        #         self.gripper.release()
+        #         self.gripper_state = CONSTANTS.OPEN
 
         self.cur_step += 1
 
-        obs_pixels = self.get_rgb()
-        robot_state = self.get_robot_state()
-        robot_force = self.get_robot_force()
+        # obs_pixels = self.get_rgb()
+        # robot_state = self.get_robot_state()
+        # robot_force = self.get_robot_force()
 
-        if obs_pixels.shape[0] != 3:
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
+        # if obs_pixels.shape[0] != 3:
+        #     obs_pixels = obs_pixels.transpose(2, 0, 1)
 
-        obs_pixels = obs_pixels.astype(np.float32) / 255
+        # obs_pixels = obs_pixels.astype(np.float32) / 255
 
         obs_dict = {
-            'wrist_img': obs_pixels,
-            'force': robot_force,
-            'state': robot_state,
+            # 'wrist_img': obs_pixels,
+            # 'force': robot_force,
+            # 'state': robot_state,
+            'wrist_img': np.random.rand(3, 480, 640),
+            'force': np.random.rand(3),
+            'state': np.random.rand(14),
         }
 
         done = self.cur_step >= self.episode_length
@@ -163,28 +167,31 @@ class RealWorldEnv(gym.Env):
         
         return obs_dict, None, done, None
 
-    def reset(self):
-        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) 
-        self.gripper.release()
+    def reset(self, seed = None, options = None):
+        # self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position) 
+        # self.gripper.release()
         self.gripper_state = CONSTANTS.OPEN
         self.prev_gripper_pos = CONSTANTS.OPEN
-        self.ur5_controller.zero_ft_sensor()
+        # self.ur5_controller.zero_ft_sensor()
 
         self.cur_step = 0
 
-        obs_pixels = self.get_rgb()
-        robot_state = self.get_robot_state()
-        robot_force = self.get_robot_force()
+        # obs_pixels = self.get_rgb()
+        # robot_state = self.get_robot_state()
+        # robot_force = self.get_robot_force()
 
-        if obs_pixels.shape[0] != 3:
-            obs_pixels = obs_pixels.transpose(2, 0, 1)
+        # if obs_pixels.shape[0] != 3:
+        #     obs_pixels = obs_pixels.transpose(2, 0, 1)
 
-        obs_pixels = obs_pixels.astype(np.float32) / 255
+        # obs_pixels = obs_pixels.astype(np.float32) / 255
 
         obs_dict = {
-            'wrist_img': obs_pixels,
-            'force': robot_force,
-            'state': robot_state,
+            # 'wrist_img': obs_pixels,
+            # 'force': robot_force,
+            # 'state': robot_state,
+            'wrist_img': np.random.rand(3, 480, 640),
+            'force': np.random.rand(3),
+            'state': np.random.rand(14),
         }
 
         return obs_dict

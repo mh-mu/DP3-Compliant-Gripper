@@ -1237,6 +1237,7 @@ class DP3Realworld(BasePolicy):
         result: must include "action" key
         """
         # normalize input
+        print(obs_dict['wrist_img'].shape)
         nobs = self.normalizer.normalize(obs_dict)
         # use only the rgb image of the combined image (first 3 channels)
         # if not self.use_compliant_image:

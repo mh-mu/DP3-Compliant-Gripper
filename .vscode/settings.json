@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./3D-Diffusion-Policy/diffusion_policy_3d/env_runner"
+    ]
+}

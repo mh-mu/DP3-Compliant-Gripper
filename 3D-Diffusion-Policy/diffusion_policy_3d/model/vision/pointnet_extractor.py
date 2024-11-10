@@ -647,13 +647,16 @@ class DP3RealworldEncoder(nn.Module):
         output_dim = state_mlp_size[-1]
 
         self.n_output_channels  += output_dim
-        self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0] + self.force_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+        if self.use_force:
+            self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0] + self.force_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+        else:
+            self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0], output_dim, net_arch, state_mlp_activation_fn))
 
         cprint(f"[DP3RealworldEncoder] output dim: {self.n_output_channels}", "red")
 
 
     def forward(self, observations: Dict) -> torch.Tensor:
-        combined_img = observations[self.img_key].float()
+        combined_img = observations[self.rgb_image_key].float()
         assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
         
         # combined_img: B * 6 * H * W
