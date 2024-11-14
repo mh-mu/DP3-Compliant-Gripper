@@ -52,10 +52,10 @@ def main(args):
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
 
 	total_count = 0
-	wrist_img_arrays = []
-	force_arrays = []
-	state_arrays = []
-	action_arrays = []
+	# wrist_img_arrays = []
+	# force_arrays = []
+	# state_arrays = []
+	# action_arrays = []
 	episode_ends_arrays = []
 	
 	episode_idx = 0
@@ -170,56 +170,74 @@ def main(args):
 		total_count += total_count_sub
 
 		if episode_idx > 0:
-			episode_ends_arrays = episode_ends_arrays.tolist()   
-			wrist_img_arrays = wrist_img_arrays.tolist()
-			force_arrays = force_arrays.tolist()
-			state_arrays = state_arrays.tolist()
-			action_arrays = action_arrays.tolist()
-
+			episode_ends_arrays = episode_ends_arrays.tolist()
 		episode_ends_arrays.append(copy.deepcopy(total_count)) # the index of the last step of the episode
-		wrist_img_arrays.extend(copy.deepcopy(wrist_img_arrays_sub))
-		force_arrays.extend(copy.deepcopy(force_arrays_sub))
-		state_arrays.extend(copy.deepcopy(state_arrays_sub))
-		action_arrays.extend(copy.deepcopy(action_arrays_sub))
+		# wrist_img_arrays.extend(copy.deepcopy(wrist_img_arrays_sub))
+		# force_arrays.extend(copy.deepcopy(force_arrays_sub))
+		# state_arrays.extend(copy.deepcopy(state_arrays_sub))
+		# action_arrays.extend(copy.deepcopy(action_arrays_sub))
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
+
+
 
 		###############################
 		# save data after each episode
 		###############################
 
-		# TODO: list of np arrays or list of list (error: stack need to be same shape)
-		wrist_img_arrays = np.stack(wrist_img_arrays, axis=0)
-		if wrist_img_arrays.shape[1] == 3: # make channel last
-			wrist_img_arrays = np.transpose(wrist_img_arrays, (0,2,3,1))
-		force_arrays = np.stack(force_arrays, axis=0)
-		state_arrays = np.stack(state_arrays, axis=0)
-		action_arrays = np.stack(action_arrays, axis=0)
+		# Convert lists to numpy arrays
+		wrist_img_arrays_sub = np.stack(wrist_img_arrays_sub, axis=0)
+		if wrist_img_arrays_sub.shape[1] == 3: # make channel last
+			wrist_img_arrays_sub = np.transpose(wrist_img_arrays_sub, (0,2,3,1))
+		force_arrays_sub = np.stack(force_arrays_sub, axis=0)
+		state_arrays_sub = np.stack(state_arrays_sub, axis=0)
+		action_arrays_sub = np.stack(action_arrays_sub, axis=0)
+
+		# Append to existing zarr datasets
+		if 'wrist_img' not in zarr_data:
+			zarr_data.create_dataset('wrist_img', data=wrist_img_arrays_sub, chunks=(100, *wrist_img_arrays_sub.shape[1:]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['wrist_img'].append(wrist_img_arrays_sub)
+
+		if 'force' not in zarr_data:
+			zarr_data.create_dataset('force', data=force_arrays_sub, chunks=(100, force_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['force'].append(force_arrays_sub)
+
+		if 'state' not in zarr_data:
+			zarr_data.create_dataset('state', data=state_arrays_sub, chunks=(100, state_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['state'].append(state_arrays_sub)
+
+		if 'action' not in zarr_data:
+			zarr_data.create_dataset('action', data=action_arrays_sub, chunks=(100, action_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['action'].append(action_arrays_sub)
+
+		# Save episode ends
 		episode_ends_arrays = np.array(episode_ends_arrays)
-
-		compressor = zarr.Blosc(cname='zstd', clevel=3, shuffle=1)
-		wrist_img_chunk_size = (100, wrist_img_arrays.shape[1], wrist_img_arrays.shape[2], wrist_img_arrays.shape[3])
-		force_chunk_size = (100, force_arrays.shape[1])
-		state_chunk_size = (100, state_arrays.shape[1])
-		action_chunk_size = (100, action_arrays.shape[1])
-
-		# TODO: append to existing zarr file
-		zarr_data.create_dataset('wrist_img', data=wrist_img_arrays, chunks=wrist_img_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
-		zarr_data.create_dataset('force', data=force_arrays, chunks=force_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
-		zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
-		zarr_data.create_dataset('action', data=action_arrays, chunks=action_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
-		zarr_meta.create_dataset('episode_ends', data=episode_ends_arrays, dtype='int64', overwrite=True, compressor=compressor)
+		if 'episode_ends' not in zarr_meta:
+			zarr_meta.create_dataset('episode_ends', data=episode_ends_arrays, dtype='int64', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_meta['episode_ends'].append(episode_ends_arrays)
 
 		cprint(f'-'*50, 'cyan')
 		# print shape
-		cprint(f'wrist img shape: {wrist_img_arrays.shape}, range: [{np.min(wrist_img_arrays)}, {np.max(wrist_img_arrays)}]', 'green')
-		cprint(f'force shape: {force_arrays.shape}, range: [{np.min(force_arrays)}, {np.max(force_arrays)}]', 'green')
-		cprint(f'state shape: {state_arrays.shape}, range: [{np.min(state_arrays)}, {np.max(state_arrays)}]', 'green')
-		cprint(f'action shape: {action_arrays.shape}, range: [{np.min(action_arrays)}, {np.max(action_arrays)}]', 'green')
+		# cprint(f'wrist img shape: {wrist_img_arrays.shape}, range: [{np.min(wrist_img_arrays)}, {np.max(wrist_img_arrays)}]', 'green')
+		# cprint(f'force shape: {force_arrays.shape}, range: [{np.min(force_arrays)}, {np.max(force_arrays)}]', 'green')
+		# cprint(f'state shape: {state_arrays.shape}, range: [{np.min(state_arrays)}, {np.max(state_arrays)}]', 'green')
+		# cprint(f'action shape: {action_arrays.shape}, range: [{np.min(action_arrays)}, {np.max(action_arrays)}]', 'green')
+		# cprint(f'Saved zarr file to {save_dir}', 'green')
+
+		cprint(f'wrist img shape: {zarr_data["wrist_img"].shape}, range: [{zarr_data["wrist_img"][:].min()}, {zarr_data["wrist_img"][:].max()}]', 'green')
+		cprint(f'force shape: {zarr_data["force"].shape}, range: [{zarr_data["force"][:].min()}, {zarr_data["force"][:].max()}]', 'green')
+		cprint(f'state shape: {zarr_data["state"].shape}, range: [{zarr_data["state"][:].min()}, {zarr_data["state"][:].max()}]', 'green')
+		cprint(f'action shape: {zarr_data["action"].shape}, range: [{zarr_data["action"][:].min()}, {zarr_data["action"][:].max()}]', 'green')
 		cprint(f'Saved zarr file to {save_dir}', 'green')
 
 	# clean up
-	del wrist_img_arrays, force_arrays, state_arrays, action_arrays, episode_ends_arrays
+	# del wrist_img_arrays, force_arrays, state_arrays, action_arrays, episode_ends_arrays
+	del episode_ends_arrays
 	del zarr_root, zarr_data, zarr_meta
 
 	# e.cap.release()

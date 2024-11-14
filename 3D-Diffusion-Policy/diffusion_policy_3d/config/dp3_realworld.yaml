@@ -56,7 +56,7 @@ policy:
   shape_meta: ${shape_meta}
 
   use_compliant_image: False
-  use_force: False
+  use_force: True
 
 
 
@@ -111,7 +111,7 @@ logging:
   group: ${exp_name}
   id: null
   mode: online
-  name: realworld_test_${training.seed}
+  name: realworld_compliant3_force_${training.seed}
   project: dp3
   resume: true
   tags:

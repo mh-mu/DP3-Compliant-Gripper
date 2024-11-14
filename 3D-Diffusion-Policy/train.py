@@ -159,6 +159,7 @@ class TrainDP3Workspace:
             config=OmegaConf.to_container(cfg, resolve=True),
             **cfg.logging
         )
+        print('wandb initialize complete')
         wandb.config.update(
             {
                 "output_dir": self.output_dir,
