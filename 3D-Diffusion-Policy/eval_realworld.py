@@ -23,8 +23,8 @@ def main(cfg: DictConfig):
     workspace = TrainDP3Workspace(cfg=cfg)
 
     # best_ckpt_path = workspace.get_checkpoint_path(tag="best")
-    ckpt_dir = '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/outputs/realworld_test-dp3_realworld-0001_seed0/checkpoints'
-    best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("epoch=0400-test_mean_score=-0.001.ckpt")
+    ckpt_dir = '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/outputs/realworld_compliant3-dp3_realworld-0002_seed0/checkpoints'
+    best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("latest.ckpt")
     if best_ckpt_path.is_file():
         print(f"Resuming from checkpoint {best_ckpt_path}")
         workspace.load_checkpoint(path=best_ckpt_path)

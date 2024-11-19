@@ -30,13 +30,13 @@ seed = np.random.randint(0, 100)
 def main(args):
 	env_name = args.env_name
 	demo_device = args.demo_device
+	finger_type = args.finger_type
 	
 	save_dir = os.path.join(args.root_dir, 'real-world_'+args.env_name+'_expert.zarr')
 	if os.path.exists(save_dir):
 		cprint('Data already exists at {}'.format(save_dir), 'red')
 		cprint("If you want to overwrite, delete the existing directory first.", "red")
 		cprint("Do you want to overwrite? (y/n)", "red")
-		# user_input = 'y'
 		user_input = input()
 		if user_input == 'y':
 			cprint('Overwriting {}'.format(save_dir), 'red')
@@ -46,16 +46,12 @@ def main(args):
 			return
 	os.makedirs(save_dir, exist_ok=True)
 
-	e = RealWorldEnv(env_name, demo_device, device="cuda:0")
+	e = RealWorldEnv(env_name, demo_device, finger_type, device="cuda:0")
 	
 	num_episodes = args.num_episodes
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
 
 	total_count = 0
-	# wrist_img_arrays = []
-	# force_arrays = []
-	# state_arrays = []
-	# action_arrays = []
 	episode_ends_arrays = []
 	
 	episode_idx = 0
@@ -63,11 +59,11 @@ def main(args):
 	if demo_device == 'spacemouse':
 		if_spacemouse_success = pyspacemouse.open()
 	elif demo_device == 'vr':
-		# init_openvr()
-		# init_controllers()
-		# time.sleep(1)
-		# print("Vive Ready")
-		# prev_vr_pose = get_controller_pose()
+		init_openvr()
+		init_controllers()
+		time.sleep(1)
+		print("Vive Ready")
+		prev_vr_pose = get_controller_pose()
 		pass
 	
 	# loop over episodes
@@ -83,12 +79,12 @@ def main(args):
 		input()
 		print('Setup complete')
 
-		# obs_dict = e.get_visual_obs() # TODO: uncomment
-		obs_dict = {
-            'wrist_img': np.random.rand(3, 480, 640),
-            'force': np.random.rand(3),
-            'state': np.random.rand(13),
-        }
+		obs_dict = e.get_visual_obs()
+		# obs_dict = {
+        #     'wrist_img': np.random.rand(3, 480, 640),
+        #     'force': np.random.rand(3),
+        #     'state': np.random.rand(13),
+        # }
 
 		done = False
 
@@ -132,38 +128,38 @@ def main(args):
 					cprint(f'Error: Spacemouse not reading', 'red')
 					action = np.zeros(7)
 			elif demo_device == 'vr':
-				# vr_pose = get_controller_pose()
-				# delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
-				# delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
-				# delta_trans = delta_T[:3, 3] * e.trans_scale
+				vr_pose = get_controller_pose()
+				delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
+				delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
+				delta_trans = delta_T[:3, 3] * e.trans_scale
 
-				# prev_vr_pose = vr_pose
-				# if is_trigger_active():
-				# 	rot_action = delta_rot_vec
-				# 	trans_action = delta_trans
+				prev_vr_pose = vr_pose
+				if is_trigger_active():
+					rot_action = delta_rot_vec
+					trans_action = delta_trans
+				else:
+					rot_action = np.zeros(3)
+					trans_action = np.zeros(3)
+
+				# if is_trackpad_touched():
+				# 	trackpad_x = get_trackpad_x_state()
+				# 	if trackpad_x >= 0:
+				# 		gripper_action = CONSTANTS.OPEN
+				# 	else:
+				# 		gripper_action = CONSTANTS.CLOSE
 				# else:
-				# 	rot_action = np.zeros(3)
-				# 	trans_action = np.zeros(3)
+				# 	gripper_action = prev_gripper_action
+				# prev_gripper_action = gripper_action
 
-				# # if is_trackpad_touched():
-				# # 	trackpad_x = get_trackpad_x_state()
-				# # 	if trackpad_x >= 0:
-				# # 		gripper_action = CONSTANTS.OPEN
-				# # 	else:
-				# # 		gripper_action = CONSTANTS.CLOSE
-				# # else:
-				# # 	gripper_action = prev_gripper_action
-				# # prev_gripper_action = gripper_action
-
-				# # action = np.concatenate((rot_action, trans_action, [gripper_action]))
-				# action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))
-				action = np.concatenate((np.random.rand(3), np.random.rand(3), [CONSTANTS.CLOSE]))
+				# action = np.concatenate((rot_action, trans_action, [gripper_action]))
+				action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))
+				# action = np.concatenate((np.random.rand(3), np.random.rand(3), [CONSTANTS.CLOSE]))
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
    
 			if done:
-				# e.ur5_controller.close()
+				e.ur5_controller.close()
 				time.sleep(2)
 				break
 
@@ -172,10 +168,6 @@ def main(args):
 		if episode_idx > 0:
 			episode_ends_arrays = episode_ends_arrays.tolist()
 		episode_ends_arrays.append(copy.deepcopy(total_count)) # the index of the last step of the episode
-		# wrist_img_arrays.extend(copy.deepcopy(wrist_img_arrays_sub))
-		# force_arrays.extend(copy.deepcopy(force_arrays_sub))
-		# state_arrays.extend(copy.deepcopy(state_arrays_sub))
-		# action_arrays.extend(copy.deepcopy(action_arrays_sub))
 		cprint('Episode: {}'.format(episode_idx), 'green')
 		episode_idx += 1
 
@@ -195,22 +187,22 @@ def main(args):
 
 		# Append to existing zarr datasets
 		if 'wrist_img' not in zarr_data:
-			zarr_data.create_dataset('wrist_img', data=wrist_img_arrays_sub, chunks=(100, *wrist_img_arrays_sub.shape[1:]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+			zarr_data.create_dataset('wrist_img', data=wrist_img_arrays_sub, chunks=(100, *wrist_img_arrays_sub.shape[1:]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
 		else:
 			zarr_data['wrist_img'].append(wrist_img_arrays_sub)
 
 		if 'force' not in zarr_data:
-			zarr_data.create_dataset('force', data=force_arrays_sub, chunks=(100, force_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+			zarr_data.create_dataset('force', data=force_arrays_sub, chunks=(100, force_arrays_sub.shape[1]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
 		else:
 			zarr_data['force'].append(force_arrays_sub)
 
 		if 'state' not in zarr_data:
-			zarr_data.create_dataset('state', data=state_arrays_sub, chunks=(100, state_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+			zarr_data.create_dataset('state', data=state_arrays_sub, chunks=(100, state_arrays_sub.shape[1]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
 		else:
 			zarr_data['state'].append(state_arrays_sub)
 
 		if 'action' not in zarr_data:
-			zarr_data.create_dataset('action', data=action_arrays_sub, chunks=(100, action_arrays_sub.shape[1]), dtype='float32', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+			zarr_data.create_dataset('action', data=action_arrays_sub, chunks=(100, action_arrays_sub.shape[1]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
 		else:
 			zarr_data['action'].append(action_arrays_sub)
 
@@ -223,12 +215,6 @@ def main(args):
 
 		cprint(f'-'*50, 'cyan')
 		# print shape
-		# cprint(f'wrist img shape: {wrist_img_arrays.shape}, range: [{np.min(wrist_img_arrays)}, {np.max(wrist_img_arrays)}]', 'green')
-		# cprint(f'force shape: {force_arrays.shape}, range: [{np.min(force_arrays)}, {np.max(force_arrays)}]', 'green')
-		# cprint(f'state shape: {state_arrays.shape}, range: [{np.min(state_arrays)}, {np.max(state_arrays)}]', 'green')
-		# cprint(f'action shape: {action_arrays.shape}, range: [{np.min(action_arrays)}, {np.max(action_arrays)}]', 'green')
-		# cprint(f'Saved zarr file to {save_dir}', 'green')
-
 		cprint(f'wrist img shape: {zarr_data["wrist_img"].shape}, range: [{zarr_data["wrist_img"][:].min()}, {zarr_data["wrist_img"][:].max()}]', 'green')
 		cprint(f'force shape: {zarr_data["force"].shape}, range: [{zarr_data["force"][:].min()}, {zarr_data["force"][:].max()}]', 'green')
 		cprint(f'state shape: {zarr_data["state"].shape}, range: [{zarr_data["state"][:].min()}, {zarr_data["state"][:].max()}]', 'green')
@@ -236,12 +222,11 @@ def main(args):
 		cprint(f'Saved zarr file to {save_dir}', 'green')
 
 	# clean up
-	# del wrist_img_arrays, force_arrays, state_arrays, action_arrays, episode_ends_arrays
 	del episode_ends_arrays
 	del zarr_root, zarr_data, zarr_meta
 
-	# e.cap.release()
-	# openvr.shutdown()
+	e.cap.release()
+	openvr.shutdown()
 
 
  
@@ -250,6 +235,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--env_name', type=str, default='test')
 	parser.add_argument('--demo_device', type=str, default='vr')
+	parser.add_argument('--finger_type', type=str, default='rigid')
 	parser.add_argument('--num_episodes', type=int, default=10)
 	parser.add_argument('--root_dir', type=str, default="../../3D-Diffusion-Policy/data/" )
 

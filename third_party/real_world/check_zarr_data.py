@@ -12,18 +12,20 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_compliant3_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_compliant30_0_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print(type(zarr_data))
         print("Contents of the Zarr group:")
         for name in zarr_data.keys():
             print(name)
-        print("Zarr data shape:", zarr_data['data/state'].shape)
-        # import matplotlib.pyplot as plt
+        
+        # print("Zarr data shape:", zarr_data['data/wrist_img'].shape)
+        import matplotlib.pyplot as plt
 
         # # Grab the first image in wrist_img
-        # first_image = zarr_data['data/wrist_img'][0]
+        # first_image = zarr_data['data/wrist_img'][300]
+        # print(first_image)
         # # Inverse the blue and red channels
         # first_image = first_image[..., ::-1]
 
@@ -31,11 +33,9 @@ if __name__ == "__main__":
         # plt.imshow(first_image)
         # plt.title("First Image in wrist_img")
         # plt.show()
-        # zarr_data.tree()
-        # print("Zarr data keys:", list(zarr_data.array_keys()))
 
         # forces = zarr_data['data/force']
-        # index = np.arange(1500)
+        # index = np.arange(4000)
 
         # plt.figure(figsize=(12, 6))
         # plt.plot(index, forces[:, 0], label='X', color='r')

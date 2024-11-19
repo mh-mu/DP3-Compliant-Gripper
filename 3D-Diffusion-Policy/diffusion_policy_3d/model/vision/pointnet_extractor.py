@@ -671,6 +671,7 @@ class DP3RealworldEncoder(nn.Module):
             
         state = observations[self.state_key]
         if self.use_force:
+            print(observations.keys())
             force = observations[self.force_key]
             state_force = torch.cat([state, force], dim=-1)
             state_feat = self.state_mlp(state_force)  # B * 64

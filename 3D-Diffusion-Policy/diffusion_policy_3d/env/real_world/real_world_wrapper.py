@@ -25,12 +25,12 @@ from icecream import ic
 
 class RealWorldEnv(gym.Env):
 
-    def __init__(self, task_name, demo_device, device="cuda:0", 
+    def __init__(self, task_name, demo_device, finger_type, device="cuda:0", mode='train',
                  ):
         super(RealWorldEnv, self).__init__()
     
-        # self.episode_length = self._max_episode_steps = 5e2
-        self.episode_length = self._max_episode_steps = 5
+        self.episode_length = self._max_episode_steps = 5e2
+        self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
             low=-1.0,
@@ -64,7 +64,14 @@ class RealWorldEnv(gym.Env):
         if self.demo_device not in ('spacemouse', 'vr'):
             raise ValueError(f'Unrecognized demo device: {demo_device}. Device should be "spacemouse" or "vr".')
 
-        # self.gripper = T42_controller(CONSTANTS.finger_offset_positions, port=CONSTANTS.gripper_port, data_collection_mode=False)
+        self.finger_type = finger_type
+        if self.finger_type == 'compliant':
+            self.gripper = T42_controller(CONSTANTS.finger_offset_positions_compliant, finger_type='compliant', port=CONSTANTS.gripper_port, data_collection_mode=False)
+        elif self.finger_type == 'rigid':
+            self.gripper = T42_controller(CONSTANTS.finger_offset_positions_rigid, finger_type='rigid', port=CONSTANTS.gripper_port, data_collection_mode=False)
+        else:
+            raise ValueError(f'Unrecognized finger type. Finger type should be compliant or rigid, got {finger_type} instead.')
+        
         self.step_frequency = 30
         self.step_period = 1 / self.step_frequency
         self.target_trans_speed = 2e2
@@ -76,10 +83,10 @@ class RealWorldEnv(gym.Env):
             self.trans_scale = self.target_trans_speed / self.step_frequency
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
-        # self.cap = cv2.VideoCapture(2)
-        # if not self.cap.isOpened():
-        #     print("Error: Could not open webcam.")
-        #     exit()
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            print("Error: Could not open webcam.")
+            exit()
 
     def get_robot_state(self):
         '''
@@ -125,7 +132,16 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        # self.ur5_controller.set_EE_transform_delta((rot, trans))
+        if self.mode == 'train':
+            self.ur5_controller.set_EE_transform_delta((rot, trans))
+        elif self.mode == 'eval':
+            print('The predicted action is:', rot_vec, trans)
+            print('Execute action? (y/n)')
+            if input() == 'y':
+                self.ur5_controller.set_EE_transform_delta((rot, trans))
+            else:
+                print('Action not executed. Exiting...')
+                exit()
         # check vel, boundary for position and orientation
         # or ask before each execution
         # ic(trans)
@@ -142,22 +158,22 @@ class RealWorldEnv(gym.Env):
 
         self.cur_step += 1
 
-        # obs_pixels = self.get_rgb()
-        # robot_state = self.get_robot_state()
-        # robot_force = self.get_robot_force()
+        obs_pixels = self.get_rgb()
+        robot_state = self.get_robot_state()
+        robot_force = self.get_robot_force()
 
-        # if obs_pixels.shape[0] != 3:
-        #     obs_pixels = obs_pixels.transpose(2, 0, 1)
+        if obs_pixels.shape[0] != 3:
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
 
-        # obs_pixels = obs_pixels.astype(np.float32) / 255
+        obs_pixels = obs_pixels.astype(np.float32) / 255
 
         obs_dict = {
-            # 'wrist_img': obs_pixels,
-            # 'force': robot_force,
-            # 'state': robot_state,
-            'wrist_img': np.random.rand(3, 480, 640),
-            'force': np.random.rand(3),
-            'state': np.random.rand(13),
+            'wrist_img': obs_pixels,
+            'force': robot_force,
+            'state': robot_state,
+            # 'wrist_img': np.random.rand(3, 480, 640),
+            # 'force': np.random.rand(3),
+            # 'state': np.random.rand(13),
         }
 
         done = self.cur_step >= self.episode_length
@@ -170,33 +186,33 @@ class RealWorldEnv(gym.Env):
         return obs_dict, None, done, None
 
     def reset(self, seed = None, options = None):
-        # self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
+        self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         time.sleep(2)
 
-        # self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
-        # self.gripper.close()
+        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
+        self.gripper.close()
         self.gripper_state = CONSTANTS.CLOSE
         self.prev_gripper_pos = CONSTANTS.CLOSE
-        # self.ur5_controller.zero_ft_sensor()
+        self.ur5_controller.zero_ft_sensor()
 
         self.cur_step = 0
 
-        # obs_pixels = self.get_rgb()
-        # robot_state = self.get_robot_state()
-        # robot_force = self.get_robot_force()
+        obs_pixels = self.get_rgb()
+        robot_state = self.get_robot_state()
+        robot_force = self.get_robot_force()
 
-        # if obs_pixels.shape[0] != 3:
-        #     obs_pixels = obs_pixels.transpose(2, 0, 1)
+        if obs_pixels.shape[0] != 3:
+            obs_pixels = obs_pixels.transpose(2, 0, 1)
 
-        # obs_pixels = obs_pixels.astype(np.float32) / 255
+        obs_pixels = obs_pixels.astype(np.float32) / 255
 
         obs_dict = {
-            # 'wrist_img': obs_pixels,
-            # 'force': robot_force,
-            # 'state': robot_state,
-            'wrist_img': np.random.rand(3, 480, 640),
-            'force': np.random.rand(3),
-            'state': np.random.rand(13),
+            'wrist_img': obs_pixels,
+            'force': robot_force,
+            'state': robot_state,
+            # 'wrist_img': np.random.rand(3, 480, 640),
+            # 'force': np.random.rand(3),
+            # 'state': np.random.rand(13),
         }
 
         return obs_dict

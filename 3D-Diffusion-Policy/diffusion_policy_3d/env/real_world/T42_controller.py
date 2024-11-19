@@ -14,8 +14,15 @@ import pickle, os
 from icecream import ic
 
 class T42_controller:
-    def __init__(self, finger_offsets, port = '/dev/ttyUSB0', data_collection_mode = False):
-        self.T = Model_T42(port=port, s1=1, s2=2, dyn_model='XM', s1_min=-0.05, s2_min=0.37)
+    def __init__(self, finger_offsets, finger_type, port = '/dev/ttyUSB0', data_collection_mode = False):
+        self.finger_type = finger_type
+        if self.finger_type == 'compliant':
+            self.T = Model_T42(port=port, s1=1, s2=2, dyn_model='XM', s1_min=-0.05, s2_min=0.37)
+        elif self.finger_type == 'rigid':
+            self.T = Model_T42(port=port, s1=1, s2=2, dyn_model='XM', s1_min=-0.05, s2_min=0.03)
+        else:
+            raise ValueError(f'Unrecognized finger type. Finger type should be compliant or rigid, got {finger_type} instead.')
+        
         self.data_collection_mode = data_collection_mode
         self.finger_offsets = finger_offsets
 
@@ -37,8 +44,12 @@ class T42_controller:
         else:
             # self.T.moveMotor(0, self.finger_offsets[0] - 0.055) # 0.29
             # self.T.moveMotor(1, self.finger_offsets[1] - 0.055) # 0.56
-            self.T.moveMotor(0, self.finger_offsets[0] - 0.12) # 0.29
-            self.T.moveMotor(1, self.finger_offsets[1] - 0.12) # 0.56
+            if self.finger_type == 'compliant':
+                self.T.moveMotor(0, self.finger_offsets[0] - 0.12) # 0.29
+                self.T.moveMotor(1, self.finger_offsets[1] - 0.12) # 0.56
+            elif self.finger_type == 'rigid':
+                self.T.moveMotor(0, self.finger_offsets[0] - 0.05) # 0.29
+                self.T.moveMotor(1, self.finger_offsets[1] - 0.05) # 0.56
         # time.sleep(1)
 
     def move_to_zero_positions(self):

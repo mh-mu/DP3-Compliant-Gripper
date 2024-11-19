@@ -63,11 +63,11 @@ def main(args):
 	if demo_device == 'spacemouse':
 		if_spacemouse_success = pyspacemouse.open()
 	elif demo_device == 'vr':
-		# init_openvr()
-		# init_controllers()
-		# time.sleep(1)
-		# print("Vive Ready")
-		# prev_vr_pose = get_controller_pose()
+		init_openvr()
+		init_controllers()
+		time.sleep(1)
+		print("Vive Ready")
+		prev_vr_pose = get_controller_pose()
 		pass
 	
 	# loop over episodes
@@ -83,12 +83,12 @@ def main(args):
 		input()
 		print('Setup complete')
 
-		# obs_dict = e.get_visual_obs() # TODO: uncomment
-		obs_dict = {
-            'wrist_img': np.random.rand(3, 480, 640),
-            'force': np.random.rand(3),
-            'state': np.random.rand(13),
-        }
+		obs_dict = e.get_visual_obs() # TODO: uncomment
+		# obs_dict = {
+        #     'wrist_img': np.random.rand(3, 480, 640),
+        #     'force': np.random.rand(3),
+        #     'state': np.random.rand(13),
+        # }
 
 		done = False
 
@@ -132,38 +132,38 @@ def main(args):
 					cprint(f'Error: Spacemouse not reading', 'red')
 					action = np.zeros(7)
 			elif demo_device == 'vr':
-				# vr_pose = get_controller_pose()
-				# delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
-				# delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
-				# delta_trans = delta_T[:3, 3] * e.trans_scale
+				vr_pose = get_controller_pose()
+				delta_T = get_controller_pose_delta(vr_pose, prev_vr_pose)
+				delta_rot_vec = Rotation.from_matrix(delta_T[:3, :3]).as_rotvec() * e.rot_scale
+				delta_trans = delta_T[:3, 3] * e.trans_scale
 
-				# prev_vr_pose = vr_pose
-				# if is_trigger_active():
-				# 	rot_action = delta_rot_vec
-				# 	trans_action = delta_trans
+				prev_vr_pose = vr_pose
+				if is_trigger_active():
+					rot_action = delta_rot_vec
+					trans_action = delta_trans
+				else:
+					rot_action = np.zeros(3)
+					trans_action = np.zeros(3)
+
+				# if is_trackpad_touched():
+				# 	trackpad_x = get_trackpad_x_state()
+				# 	if trackpad_x >= 0:
+				# 		gripper_action = CONSTANTS.OPEN
+				# 	else:
+				# 		gripper_action = CONSTANTS.CLOSE
 				# else:
-				# 	rot_action = np.zeros(3)
-				# 	trans_action = np.zeros(3)
+				# 	gripper_action = prev_gripper_action
+				# prev_gripper_action = gripper_action
 
-				# # if is_trackpad_touched():
-				# # 	trackpad_x = get_trackpad_x_state()
-				# # 	if trackpad_x >= 0:
-				# # 		gripper_action = CONSTANTS.OPEN
-				# # 	else:
-				# # 		gripper_action = CONSTANTS.CLOSE
-				# # else:
-				# # 	gripper_action = prev_gripper_action
-				# # prev_gripper_action = gripper_action
-
-				# # action = np.concatenate((rot_action, trans_action, [gripper_action]))
-				# action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))
-				action = np.concatenate((np.random.rand(3), np.random.rand(3), [CONSTANTS.CLOSE]))
+				# action = np.concatenate((rot_action, trans_action, [gripper_action]))
+				action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))
+				# action = np.concatenate((np.random.rand(3), np.random.rand(3), [CONSTANTS.CLOSE]))
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)
    
 			if done:
-				# e.ur5_controller.close()
+				e.ur5_controller.close()
 				time.sleep(2)
 				break
 
@@ -188,7 +188,6 @@ def main(args):
 		# save data after each episode
 		###############################
 
-		# TODO: list of np arrays or list of list (error: stack need to be same shape)
 		wrist_img_arrays = np.stack(wrist_img_arrays, axis=0)
 		if wrist_img_arrays.shape[1] == 3: # make channel last
 			wrist_img_arrays = np.transpose(wrist_img_arrays, (0,2,3,1))
@@ -203,7 +202,6 @@ def main(args):
 		state_chunk_size = (100, state_arrays.shape[1])
 		action_chunk_size = (100, action_arrays.shape[1])
 
-		# TODO: append to existing zarr file
 		zarr_data.create_dataset('wrist_img', data=wrist_img_arrays, chunks=wrist_img_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 		zarr_data.create_dataset('force', data=force_arrays, chunks=force_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
 		zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
@@ -222,8 +220,8 @@ def main(args):
 	del wrist_img_arrays, force_arrays, state_arrays, action_arrays, episode_ends_arrays
 	del zarr_root, zarr_data, zarr_meta
 
-	# e.cap.release()
-	# openvr.shutdown()
+	e.cap.release()
+	openvr.shutdown()
 
 
  
