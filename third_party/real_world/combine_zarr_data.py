@@ -42,12 +42,16 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path):
 
 # Example usage
 dataset_paths = [
-    '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/real-world_compliant30_0_expert.zarr',
-    '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/real-world_compliant30_1_expert.zarr',
-    '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/real-world_compliant30_2_expert.zarr',
-    '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/real-world_compliant30_3_expert.zarr'
+    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_0_expert.zarr',
+    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_1_expert.zarr',
+    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_2_expert.zarr',
+    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_3_expert.zarr'
 ]
-output_path = '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/real-world_compliant30_combined16_expert.zarr'
+output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_combined16_expert.zarr'
 
 combine_multiple_zarr_datasets(dataset_paths, output_path)
 
+# Modify 'meta/episode_ends' list
+combined_dataset = zarr.open(output_path, mode='r+')
+total_num_step = combined_dataset['data/action'].shape[0]
+combined_dataset['meta/episode_ends'] = list(range(500, total_num_step + 1, 500))

@@ -42,7 +42,7 @@ class RealworldRunner(BaseRunner):
         def env_fn(task_name):
             return MultiStepWrapper(
                 SimpleVideoRecordingWrapper(
-                    RealWorldEnv(task_name=task_name, device=device, demo_device='vr', mode='eval')),
+                    RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
                 n_obs_steps=n_obs_steps,
                 n_action_steps=n_action_steps,
                 max_episode_steps=max_steps,

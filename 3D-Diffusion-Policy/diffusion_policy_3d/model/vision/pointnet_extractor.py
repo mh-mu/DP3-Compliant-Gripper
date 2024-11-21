@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 import copy
-import icecream as ic
+from icecream import ic
 
 from typing import Optional, Dict, Tuple, Union, List, Type
 from termcolor import cprint
@@ -671,10 +671,9 @@ class DP3RealworldEncoder(nn.Module):
             
         state = observations[self.state_key]
         if self.use_force:
-            print(observations.keys())
             force = observations[self.force_key]
             state_force = torch.cat([state, force], dim=-1)
-            state_feat = self.state_mlp(state_force)  # B * 64
+            state_feat = self.state_mlp(state_force.float())  # B * 64
         else:
             state_feat = self.state_mlp(state)  # B * 64
         final_feat = torch.cat([img_feat, state_feat], dim=-1)

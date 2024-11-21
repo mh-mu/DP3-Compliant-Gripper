@@ -23,7 +23,7 @@ def main(cfg: DictConfig):
     workspace = TrainDP3Workspace(cfg=cfg)
 
     # best_ckpt_path = workspace.get_checkpoint_path(tag="best")
-    ckpt_dir = '/home/mei/workspace/DP3-Compliant-Gripper/3D-Diffusion-Policy/data/outputs/realworld_compliant3-dp3_realworld-0002_seed0/checkpoints'
+    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_compliant30-dp3_realworld-0004_seed0/checkpoints'
     best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("latest.ckpt")
     if best_ckpt_path.is_file():
         print(f"Resuming from checkpoint {best_ckpt_path}")
@@ -40,7 +40,8 @@ def main(cfg: DictConfig):
     policy.eval()
     policy.cuda()
 
-    runner_log = env_runner.run(policy=policy, use_force=False)
+    # runner_log = env_runner.run(policy=policy, use_force=False)
+    runner_log = env_runner.run(policy=policy, use_force=True)
 
     cprint(f"---------------- Eval Results --------------", 'magenta')
     for key, value in runner_log.items():
