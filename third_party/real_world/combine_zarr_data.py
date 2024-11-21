@@ -1,7 +1,7 @@
 import zarr
 
 
-def combine_multiple_zarr_datasets(dataset_paths, output_path):
+def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
     # Create a new zarr group for the combined dataset
     combined_dataset = zarr.open(output_path, mode='w')
 
@@ -11,7 +11,7 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path):
                 new_group = target_group.create_group(key)
                 copy_group(item, new_group)
             else:
-                target_group[key] = item[:].astype('float16')
+                target_group[key] = item[::stepskip].astype('float16')
 
     def append_group(source_group, target_group):
         for key, item in source_group.items():
@@ -23,9 +23,9 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path):
                 append_group(item, new_group)
             else:
                 if key in target_group:
-                    target_group[key].append(item[:].astype('float16'), axis=0)
+                    target_group[key].append(item[::stepskip].astype('float16'), axis=0)
                 else:
-                    target_group[key] = item[:].astype('float16')
+                    target_group[key] = item[::stepskip].astype('float16')
 
     # Copy the first dataset into the combined dataset
     first_dataset = zarr.open(dataset_paths[0], mode='r')
@@ -40,18 +40,18 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path):
 
     return combined_dataset
 
-# Example usage
-dataset_paths = [
-    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_0_expert.zarr',
-    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_1_expert.zarr',
-    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_2_expert.zarr',
-    '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_3_expert.zarr'
-]
-output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_combined16_expert.zarr'
+if __name__ == "__main__":
+    dataset_paths = [
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_0_expert.zarr',
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_1_expert.zarr',
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_2_expert.zarr',
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_/real-world_compliant30_3_expert.zarr'
+    ]
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_compliant30_combined16_expert.zarr'
 
-combine_multiple_zarr_datasets(dataset_paths, output_path)
+    combine_multiple_zarr_datasets(dataset_paths, output_path)
 
-# Modify 'meta/episode_ends' list
-combined_dataset = zarr.open(output_path, mode='r+')
-total_num_step = combined_dataset['data/action'].shape[0]
-combined_dataset['meta/episode_ends'] = list(range(500, total_num_step + 1, 500))
+    # Modify 'meta/episode_ends' list
+    combined_dataset = zarr.open(output_path, mode='r+')
+    total_num_step = combined_dataset['data/action'].shape[0]
+    combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))

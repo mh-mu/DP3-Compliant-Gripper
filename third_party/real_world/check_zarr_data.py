@@ -34,46 +34,33 @@ if __name__ == "__main__":
         # print(zarr_data['meta/episode_ends'][:])
         
         # print("Zarr data shape:", zarr_data['data/wrist_img'].shape)
-        # import matplotlib.pyplot as plt
 
-        # Get all images in 'data/wrist_img'
-        images = zarr_data['data/wrist_img'][:1500]
+        # save wrist_img as video
+        images = zarr_data['data/wrist_img'][:1800]
 
-        # Define the codec and create VideoWriter object
         height, width, layers = images[0].shape
         video = cv2.VideoWriter('wrist_img_video.avi', cv2.VideoWriter_fourcc(*'DIVX'), 10, (width, height))
 
         for image in images:
-            # print(f"Type: {type(image)}, dtype: {image.dtype}, shape: {image.shape}")
-            # Convert RGB to BGR
-            # image_bgr = image[..., ::-1]
-            # Convert float16 image to uint8
             image = (image * 255).astype('uint8')
             video.write(image)
 
         video.release()
         print("Video saved as wrist_img_video.avi")
 
-        # # Grab the first image in wrist_img
-        # first_image = zarr_data['data/wrist_img'][300]
-        # print(first_image)
-        # # Inverse the blue and red channels
-        # first_image = first_image[..., ::-1]
+        # plot forces
+        num_data_points = zarr_data['data/wrist_img'].shape[0]
 
-        # # Display the image
-        # plt.imshow(first_image)
-        # plt.title("First Image in wrist_img")
-        # plt.show()
+        forces = zarr_data['data/force']
+        index = np.arange(num_data_points)
 
-        # forces = zarr_data['data/force']
-        # index = np.arange(4000)
+        plt.figure(figsize=(12, 6))
+        plt.plot(index, forces[:, 0], label='X', color='r')
+        plt.plot(index, forces[:, 1], label='Y', color='g')
+        plt.plot(index, forces[:, 2], label='Z', color='b')
 
-        # plt.figure(figsize=(12, 6))
-        # plt.plot(index, forces[:, 0], label='X', color='r')
-        # plt.plot(index, forces[:, 1], label='Y', color='g')
-        # plt.plot(index, forces[:, 2], label='Z', color='b')
-
-        # plt.xlabel('Index')
-        # plt.ylabel('Force')
-        # plt.legend()
+        plt.xlabel('Index')
+        plt.ylabel('Force')
+        plt.legend()
+        plt.savefig('force_plot.jpg')
         # plt.show()

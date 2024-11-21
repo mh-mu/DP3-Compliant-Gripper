@@ -29,7 +29,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 5e2
+        self.episode_length = self._max_episode_steps = 6e2
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
