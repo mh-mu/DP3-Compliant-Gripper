@@ -30,6 +30,7 @@ seed = np.random.randint(0, 100)
 def main(args):
 	env_name = args.env_name
 	demo_device = args.demo_device
+	finger_type = args.finger_type
 	
 	save_dir = os.path.join(args.root_dir, 'real-world_'+args.env_name+'_expert.zarr')
 	if os.path.exists(save_dir):
@@ -46,7 +47,7 @@ def main(args):
 			return
 	os.makedirs(save_dir, exist_ok=True)
 
-	e = RealWorldEnv(env_name, demo_device, device="cuda:0")
+	e = RealWorldEnv(env_name, demo_device, finger_type, device="cuda:0")
 	
 	num_episodes = args.num_episodes
 	cprint(f"Number of episodes : {num_episodes}", "yellow")
@@ -188,6 +189,8 @@ def main(args):
 		# save data after each episode
 		###############################
 
+		ic(wrist_img_arrays[0].shape)
+		ic(wrist_img_arrays[-1].shape)
 		wrist_img_arrays = np.stack(wrist_img_arrays, axis=0)
 		if wrist_img_arrays.shape[1] == 3: # make channel last
 			wrist_img_arrays = np.transpose(wrist_img_arrays, (0,2,3,1))
@@ -231,6 +234,7 @@ if __name__ == "__main__":
 	parser.add_argument('--env_name', type=str, default='test')
 	parser.add_argument('--demo_device', type=str, default='vr')
 	parser.add_argument('--num_episodes', type=int, default=10)
+	parser.add_argument('--finger_type', type=str, default='rigid')
 	parser.add_argument('--root_dir', type=str, default="../../3D-Diffusion-Policy/data/" )
 
 	args = parser.parse_args()

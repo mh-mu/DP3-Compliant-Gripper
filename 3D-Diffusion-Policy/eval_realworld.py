@@ -31,7 +31,7 @@ def main(cfg: DictConfig):
 
     # TODO: change runner settings
     env_runner = RealworldRunner(output_dir='./',
-                                eval_episodes=5)
+                                eval_episodes=5,)
     # assert isinstance(env_runner, BaseRunner) # TODO: why not instance
 
     policy = workspace.model
@@ -40,8 +40,7 @@ def main(cfg: DictConfig):
     policy.eval()
     policy.cuda()
 
-    # runner_log = env_runner.run(policy=policy, use_force=False)
-    runner_log = env_runner.run(policy=policy, use_force=True)
+    runner_log = env_runner.run(policy=policy, use_force=cfg.use_force)
 
     cprint(f"---------------- Eval Results --------------", 'magenta')
     for key, value in runner_log.items():

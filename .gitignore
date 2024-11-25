@@ -46,3 +46,6 @@ nohup.out
 output/
 
 compliant_force_output.txt
+
+*.avi
+*.jpg

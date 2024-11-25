@@ -13,5 +13,5 @@ v4l2-ctl --set-ctrl=exposure_time_absolute=200
 # ffplay /dev/video0
 
 # Run the Python script
-python3 collect_demo_data_episode.py --env_name compliant30_3 --finger_type rigid --num_episodes 30
+python3 collect_demo_data_episode.py --env_name easy --finger_type rigid --num_episodes 30
 

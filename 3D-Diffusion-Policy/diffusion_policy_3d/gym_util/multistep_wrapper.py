@@ -107,7 +107,7 @@ class MultiStepWrapper(gym.Wrapper):
             n_obs_steps, 
             n_action_steps, 
             max_episode_steps=None,
-            reward_agg_method='max'
+            reward_agg_method='max',
         ):
         super().__init__(env)
         self._action_space = repeated_space(env.action_space, n_action_steps)
@@ -139,6 +139,48 @@ class MultiStepWrapper(gym.Wrapper):
         """
         actions: (n_action_steps,) + action_shape
         """
+        for act in action:
+            if len(self.done) > 0 and self.done[-1]:
+                # termination
+                break
+            observation, reward, done, info = super().step(act)
+
+            self.obs.append(observation)
+            self.reward.append(reward)
+            if (self.max_episode_steps is not None) \
+                and (len(self.reward) >= self.max_episode_steps):
+                # truncation
+                done = True
+            self.done.append(done)
+            # self._add_info(info)
+
+        observation = self._get_obs(self.n_obs_steps)
+        # reward = aggregate(self.reward, self.reward_agg_method)
+        reward = None
+        done = aggregate(self.done, 'max')
+        info = dict_take_last_n(self.info, self.n_obs_steps)
+        return observation, reward, done, info
+    
+    def step_interpolate(self, action, interpolate_steps=2):
+        """
+        Interpolates between actions with user specified number of steps using linear interpolation
+        actions: (n_action_steps,) + action_shape
+        """
+        interpolated_actions = []
+        for i in range(len(action) - 1):
+            rot1, trans1 = action[i][:3], action[i][3:6]
+            rot2, trans2 = action[i + 1][:3], action[i + 1][3:6]
+            for j in range(interpolate_steps + 1):
+                alpha = j / (interpolate_steps + 1)
+                interpolated_rot = (1 - alpha) * rot1 + alpha * rot2
+                interpolated_trans = (1 - alpha) * trans1 + alpha * trans2
+                interpolated_action = np.concatenate((interpolated_rot, interpolated_trans, [1]))
+                interpolated_actions.append(interpolated_action)
+        interpolated_actions.append(action[-1])
+        action = interpolated_actions
+        print('Interpolated action:', action)
+        quit()
+
         for act in action:
             if len(self.done) > 0 and self.done[-1]:
                 # termination

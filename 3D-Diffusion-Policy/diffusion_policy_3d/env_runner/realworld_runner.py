@@ -33,7 +33,8 @@ class RealworldRunner(BaseRunner):
                  n_test=None,
                  device="cuda:0",
                  use_point_crop=True,
-                 num_points=512
+                 num_points=512,
+                 interpolate_steps=0,
                  ):
         super().__init__(output_dir)
         self.task_name = task_name
@@ -100,7 +101,7 @@ class RealworldRunner(BaseRunner):
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
 
-                obs, reward, done, info = env.step(action)
+                obs, reward, done, info = env.step_interpolate(action)
 
                 # traj_reward += reward
                 done = np.all(done)
