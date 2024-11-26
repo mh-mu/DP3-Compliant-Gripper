@@ -178,8 +178,8 @@ class MultiStepWrapper(gym.Wrapper):
                 interpolated_actions.append(interpolated_action)
         interpolated_actions.append(action[-1])
         action = interpolated_actions
-        print('Interpolated action:', action)
-        quit()
+        # print('Interpolated action:', action)
+        # quit()
 
         for act in action:
             if len(self.done) > 0 and self.done[-1]:

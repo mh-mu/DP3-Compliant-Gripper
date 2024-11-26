@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_easy_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_circle_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print(type(zarr_data))
@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
         print_zarr_shapes(zarr_data)
 
-        # print(zarr_data['meta/episode_ends'][:])
+        print(zarr_data['meta/episode_ends'][:])
         
         # print("Zarr data shape:", zarr_data['data/wrist_img'].shape)
 
         # save wrist_img as video
-        images = zarr_data['data/wrist_img'][:1800]
+        images = zarr_data['data/wrist_img'][:1500]
 
         height, width, layers = images[0].shape
         video = cv2.VideoWriter('wrist_img_video.avi', cv2.VideoWriter_fourcc(*'DIVX'), 10, (width, height))
@@ -58,6 +58,13 @@ if __name__ == "__main__":
         plt.plot(index, forces[:, 0], label='X', color='r')
         plt.plot(index, forces[:, 1], label='Y', color='g')
         plt.plot(index, forces[:, 2], label='Z', color='b')
+
+        # index = np.arange(600)
+
+        # plt.figure(figsize=(12, 6))
+        # plt.plot(index, forces[:600, 0], label='X', color='r')
+        # plt.plot(index, forces[:600, 1], label='Y', color='g')
+        # plt.plot(index, forces[:600, 2], label='Z', color='b')
 
         plt.xlabel('Index')
         plt.ylabel('Force')

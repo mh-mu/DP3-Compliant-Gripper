@@ -102,6 +102,7 @@ class RealworldRunner(BaseRunner):
                 action = np_action_dict['action'].squeeze(0)
 
                 obs, reward, done, info = env.step_interpolate(action)
+                # obs, reward, done, info = env.step(action)
 
                 # traj_reward += reward
                 done = np.all(done)

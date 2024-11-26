@@ -54,6 +54,7 @@ class TopKCheckpointManager:
             if not os.path.exists(self.save_dir):
                 os.mkdir(self.save_dir)
 
-            if os.path.exists(delete_path):
-                os.remove(delete_path)
+            # commented out to save older checkpoints
+            # if os.path.exists(delete_path):
+            #     os.remove(delete_path)
             return ckpt_path
