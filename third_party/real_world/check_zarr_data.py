@@ -13,10 +13,9 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_circle_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_line_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        print(type(zarr_data))
         print("Contents of the Zarr group:")
         for name in zarr_data.keys():
             print(name)
@@ -31,15 +30,25 @@ if __name__ == "__main__":
 
         print_zarr_shapes(zarr_data)
 
+        # Create a list from 300 to 9000 with a step of 300
         print(zarr_data['meta/episode_ends'][:])
         
         # print("Zarr data shape:", zarr_data['data/wrist_img'].shape)
 
+        actions = zarr_data['data/action'][:]
+        # print("First 100 elements of actions:")
+        # print(actions[100:200])
+
+        # Print the range of each column in actions
+        for i in range(actions.shape[1]):
+            column = actions[:, i]
+            print(f"Range of column {i}: min={np.min(column)}, max={np.max(column)}")
+
         # save wrist_img as video
-        images = zarr_data['data/wrist_img'][:1500]
+        images = zarr_data['data/wrist_img'][:]
 
         height, width, layers = images[0].shape
-        video = cv2.VideoWriter('wrist_img_video.avi', cv2.VideoWriter_fourcc(*'DIVX'), 10, (width, height))
+        video = cv2.VideoWriter('wrist_img_video_10hz.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
 
         for image in images:
             image = (image * 255).astype('uint8')
@@ -48,26 +57,32 @@ if __name__ == "__main__":
         video.release()
         print("Video saved as wrist_img_video.avi")
 
-        # plot forces
-        num_data_points = zarr_data['data/wrist_img'].shape[0]
+        # # plot forces
+        # num_data_points = zarr_data['data/wrist_img'].shape[0]
 
-        forces = zarr_data['data/force']
-        index = np.arange(num_data_points)
-
-        plt.figure(figsize=(12, 6))
-        plt.plot(index, forces[:, 0], label='X', color='r')
-        plt.plot(index, forces[:, 1], label='Y', color='g')
-        plt.plot(index, forces[:, 2], label='Z', color='b')
-
-        # index = np.arange(600)
+        # forces = zarr_data['data/force']
+        # index = np.arange(num_data_points)
 
         # plt.figure(figsize=(12, 6))
-        # plt.plot(index, forces[:600, 0], label='X', color='r')
-        # plt.plot(index, forces[:600, 1], label='Y', color='g')
-        # plt.plot(index, forces[:600, 2], label='Z', color='b')
+        # plt.plot(index, forces[:, 0], label='X', color='r')
+        # plt.plot(index, forces[:, 1], label='Y', color='g')
+        # plt.plot(index, forces[:, 2], label='Z', color='b')
 
-        plt.xlabel('Index')
-        plt.ylabel('Force')
-        plt.legend()
-        plt.savefig('force_plot.jpg')
-        # plt.show()
+        # # index = np.arange(600)
+
+        # # plt.figure(figsize=(12, 6))
+        # # plt.plot(index, forces[:600, 0], label='X', color='r')
+        # # plt.plot(index, forces[:600, 1], label='Y', color='g')
+        # # plt.plot(index, forces[:600, 2], label='Z', color='b')
+
+        # plt.xlabel('Index')
+        # plt.ylabel('Force')
+        # plt.legend()
+        # plt.savefig('force_plot.jpg')
+        # # plt.show()
+
+    # rewrite episode end
+    # combined_dataset = zarr.open(folder_path, mode='r+')
+    # total_num_step = combined_dataset['data/action'].shape[0]
+    # combined_dataset['meta/episode_ends'] = list(range(300, total_num_step + 1, 300))
+    # print(combined_dataset['meta/episode_ends'][:])

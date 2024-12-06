@@ -2,7 +2,7 @@ defaults:
   - _self_
   - task: realworld_test
 
-name: train_dp3_realworld_easy
+name: train_dp3_realworld_circle
 
 task_name: ${task.name}
 shape_meta: ${task.shape_meta}
@@ -60,7 +60,7 @@ policy:
   shape_meta: ${shape_meta}
 
   use_compliant_image: False
-  use_force: True
+  use_force: False
 
 
 
@@ -104,7 +104,7 @@ training:
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200
-  checkpoint_every: 40
+  checkpoint_every: 20
   val_every: 1
   sample_every: 5
   max_train_steps: null

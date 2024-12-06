@@ -83,14 +83,14 @@ class RealWorldEnv(gym.Env):
             self.trans_scale = self.target_trans_speed / self.step_frequency
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(2)
         if not self.cap.isOpened():
             print("Error: Could not open webcam.")
             exit()
 
     def get_robot_state(self):
         '''
-        14 elements, ee position(3) and orientation(9), fingers open or closed (1)
+        13 elements, orientation(9) and ee position(3), fingers open or closed (1)
         '''
         eef_pos = self.ur5_controller.get_EE_transform()
         # finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
@@ -142,8 +142,6 @@ class RealWorldEnv(gym.Env):
             else:
                 print('Action not executed. Exiting...')
                 exit()
-        # check vel, boundary for position and orientation
-        # or ask before each execution
         # ic(trans)
         
         # gripper_action = action[-1]
@@ -189,7 +187,7 @@ class RealWorldEnv(gym.Env):
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         time.sleep(2)
 
-        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
+        self.ur5_controller.set_EE_transform_linear(CONSTANTS.UR5_home_position, max_trans_v = 0.8)
         self.gripper.close()
         self.gripper_state = CONSTANTS.CLOSE
         self.prev_gripper_pos = CONSTANTS.CLOSE

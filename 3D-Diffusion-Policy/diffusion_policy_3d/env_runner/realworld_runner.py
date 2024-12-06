@@ -15,6 +15,7 @@ from termcolor import cprint
 
 import cv2
 import os
+import pickle
 
 class RealworldRunner(BaseRunner):
     def __init__(self,
@@ -73,7 +74,9 @@ class RealworldRunner(BaseRunner):
         all_success_rates = []
         env = self.env
 
-        
+        actions_list = []
+        obs_dict_list = []
+
         for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in realworld {self.task_name} Realworld Env", leave=False, mininterval=self.tqdm_interval_sec):
             
             # start rollout
@@ -101,8 +104,18 @@ class RealworldRunner(BaseRunner):
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
 
-                obs, reward, done, info = env.step_interpolate(action)
-                # obs, reward, done, info = env.step(action)
+                obs_dict_list.append({k: v.cpu().numpy() for k, v in obs_dict_input.items()})
+                with open(os.path.join(self.output_dir, 'obs_dict_list.pkl'), 'wb') as f:
+                    pickle.dump(obs_dict_list, f)
+
+                actions_list.append(action.tolist())
+
+                # obs, reward, done, info = env.step_interpolate(action)
+                obs, reward, done, info = env.step(action)
+
+                with open(os.path.join(self.output_dir, 'actions_list.txt'), 'w') as f:
+                    for action in actions_list:
+                        f.write("%s\n" % action)
 
                 # traj_reward += reward
                 done = np.all(done)
