@@ -658,6 +658,8 @@ class DP3RealworldEncoder(nn.Module):
     def forward(self, observations: Dict) -> torch.Tensor:
         combined_img = observations[self.rgb_image_key].float()
         assert len(combined_img.shape) == 4, cprint(f"combined image shape: {combined_img.shape}, length should be 4", "red")
+        # ic()
+        # ic(combined_img.shape)
         
         # combined_img: B * 6 * H * W
         rgb_feat = self.rgb_model(combined_img[:, :3, :, :]) # B * out_channel
@@ -668,6 +670,8 @@ class DP3RealworldEncoder(nn.Module):
             img_feat = self.fusion_fc(img_feat)
         else:
             img_feat = rgb_feat
+        # ic()
+        # ic(img_feat.shape)
             
         state = observations[self.state_key]
         if self.use_force:
@@ -677,6 +681,9 @@ class DP3RealworldEncoder(nn.Module):
         else:
             state_feat = self.state_mlp(state)  # B * 64
         final_feat = torch.cat([img_feat, state_feat], dim=-1)
+        # ic()
+        # ic(state_feat.shape)
+        # ic(final_feat.shape)
         return final_feat
 
 

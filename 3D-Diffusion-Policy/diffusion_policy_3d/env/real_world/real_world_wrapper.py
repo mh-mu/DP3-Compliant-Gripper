@@ -8,6 +8,7 @@ import random
 import time
 import cv2
 
+
 from natsort import natsorted
 from termcolor import cprint
 from gymnasium import spaces
@@ -22,6 +23,7 @@ from . import CONSTANTS
 from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from icecream import ic 
+import pickle
 
 class RealWorldEnv(gym.Env):
 
@@ -29,7 +31,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 3e2
+        self.episode_length = self._max_episode_steps = 450
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -73,9 +75,10 @@ class RealWorldEnv(gym.Env):
             raise ValueError(f'Unrecognized finger type. Finger type should be compliant or rigid, got {finger_type} instead.')
         
         self.step_frequency = 30
+        # self.step_frequency = 10 # TODO: change this
         self.step_period = 1 / self.step_frequency
-        self.target_trans_speed = 2e2
-        self.target_rot_speed = 3e2
+        self.target_trans_speed = 2e1
+        self.target_rot_speed = 3e1
         if self.demo_device == 'spacemouse':
             self.trans_scale = 14 * self.step_period
             self.rot_scale = 1e3 * self.step_period
@@ -87,6 +90,8 @@ class RealWorldEnv(gym.Env):
         if not self.cap.isOpened():
             print("Error: Could not open webcam.")
             exit()
+        
+        self.ur5_action_list = []
 
     def get_robot_state(self):
         '''
@@ -132,17 +137,25 @@ class RealWorldEnv(gym.Env):
         rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
+        # record the previous action performed by the UR5
+        current_pose = self.ur5_controller.get_EE_transform()
+        delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
+        self.ur5_action_list.append(delta_position)
+        with open('ur5_action_list.pkl', 'wb') as f:
+            pickle.dump(self.ur5_action_list, f)
+        self.previous_pose = current_pose
+
         if self.mode == 'train':
             self.ur5_controller.set_EE_transform_delta((rot, trans))
         elif self.mode == 'eval':
-            print('The predicted action is:', rot_vec, trans)
-            print('Execute action? (y/n)')
-            if input() == 'y':
-                self.ur5_controller.set_EE_transform_delta((rot, trans))
-            else:
-                print('Action not executed. Exiting...')
-                exit()
-        # ic(trans)
+            # print('The predicted action is:', rot_vec, trans)
+            # print('Execute action? (y/n)')
+            # if input() == 'y':
+            #     self.ur5_controller.set_EE_transform_delta((rot, trans))
+            # else:
+            #     print('Action not executed. Exiting...')
+            #     exit()
+            self.ur5_controller.set_EE_transform_delta((rot, trans))
         
         # gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: 
@@ -192,6 +205,10 @@ class RealWorldEnv(gym.Env):
         self.gripper_state = CONSTANTS.CLOSE
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()
+
+        self.previous_pose = self.ur5_controller.get_EE_transform()
+        with open('ur5_action_list.pkl', 'wb') as f:
+            pickle.dump(self.ur5_action_list, f)
 
         self.cur_step = 0
 

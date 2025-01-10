@@ -1,8 +1,8 @@
 defaults:
   - _self_
-  - task: realworld_test
+  - task: realworld_line_10Hz
 
-name: train_dp3_realworld_circle
+name: train_dp3_realworld
 
 task_name: ${task.name}
 shape_meta: ${task.shape_meta}
@@ -115,7 +115,7 @@ logging:
   group: ${exp_name}
   id: null
   mode: online
-  name: realworld_easy_${training.seed}
+  name: realworld_${training.seed}
   project: dp3
   resume: true
   tags:

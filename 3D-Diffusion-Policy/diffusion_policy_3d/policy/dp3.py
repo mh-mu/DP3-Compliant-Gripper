@@ -9,6 +9,7 @@ from termcolor import cprint
 import copy
 import time
 # import pytorch3d.ops as torch3d_ops
+from icecream import ic
 
 from diffusion_policy_3d.model.common.normalizer import LinearNormalizer
 from diffusion_policy_3d.policy.base_policy import BasePolicy
@@ -1206,6 +1207,7 @@ class DP3Realworld(BasePolicy):
             dtype=condition_data.dtype,
             device=condition_data.device)
 
+
         # set step values
         scheduler.set_timesteps(self.num_inference_steps)
 
@@ -1213,7 +1215,6 @@ class DP3Realworld(BasePolicy):
         for t in scheduler.timesteps:
             # 1. apply conditioning
             trajectory[condition_mask] = condition_data[condition_mask]
-
 
             model_output = model(sample=trajectory,
                                 timestep=t, 
@@ -1260,8 +1261,8 @@ class DP3Realworld(BasePolicy):
         local_cond = None
         global_cond = None
         if self.obs_as_global_cond:
-            # condition through global feature
-            this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
+            # condition through global feature TODO: check if this is correct, why take only the first To items? what if batch size is different?
+            this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:])) # B, To, C, H, W -> B*To, C, H, W
             nobs_features = self.obs_encoder(this_nobs)
             if "cross_attention" in self.condition_type:
                 # treat as a sequence
@@ -1292,13 +1293,22 @@ class DP3Realworld(BasePolicy):
             **self.kwargs)
         
         # unnormalize prediction
+        # ic()
+        # ic(nsample.shape)
         naction_pred = nsample[...,:Da]
+        # ic(naction_pred.shape)
         action_pred = self.normalizer['action'].unnormalize(naction_pred)
 
         # get action
         start = To - 1
         end = start + self.n_action_steps
         action = action_pred[:,start:end]
+        # ic()
+        # ic(start)
+        # ic(end)
+        # ic(action.shape)
+        # ic(action_pred.shape)
+        # quit()
         
         # get prediction
 
@@ -1307,7 +1317,6 @@ class DP3Realworld(BasePolicy):
             'action': action,
             'action_pred': action_pred,
         }
-        
         return result
 
     # ========= training  ============
@@ -1315,8 +1324,14 @@ class DP3Realworld(BasePolicy):
         self.normalizer.load_state_dict(normalizer.state_dict())
 
     def compute_loss(self, batch):
+        # ic()
+        # ic(batch['obs']['wrist_img'].shape)
+        # ic(batch['obs']['state'].shape)
         # normalize input
         nobs = self.normalizer.normalize(batch['obs'])
+        # ic()
+        # ic(nobs['wrist_img'].shape)
+        # ic(nobs['state'].shape)
         nactions = self.normalizer['action'].normalize(batch['action'])
         # if not self.use_compliant_image:
         #     nobs['combined_img'] = nobs['combined_img'][..., :3,:,:]
@@ -1336,7 +1351,12 @@ class DP3Realworld(BasePolicy):
             # reshape B, T, ... to B*T
             this_nobs = dict_apply(nobs, 
                 lambda x: x[:,:self.n_obs_steps,...].reshape(-1,*x.shape[2:]))
+            # ic()
+            # ic(this_nobs['wrist_img'].shape)
+            # ic(this_nobs['state'].shape)
             nobs_features = self.obs_encoder(this_nobs)
+            # ic()
+            # ic(nobs_features.shape)
 
             if "cross_attention" in self.condition_type:
                 # treat as a sequence

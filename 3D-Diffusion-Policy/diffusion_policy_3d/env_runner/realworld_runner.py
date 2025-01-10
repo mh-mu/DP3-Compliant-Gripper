@@ -4,6 +4,7 @@ import torch
 import collections
 import tqdm
 from diffusion_policy_3d.env import RealWorldEnv
+from diffusion_policy_3d.env.real_world.real_world_replay_wrapper import RealWorldReplayEnv
 from diffusion_policy_3d.gym_util.multistep_wrapper import MultiStepWrapper
 from diffusion_policy_3d.gym_util.video_recording_wrapper import SimpleVideoRecordingWrapper
 
@@ -16,6 +17,7 @@ from termcolor import cprint
 import cv2
 import os
 import pickle
+from icecream import ic
 
 class RealworldRunner(BaseRunner):
     def __init__(self,
@@ -45,6 +47,7 @@ class RealworldRunner(BaseRunner):
             return MultiStepWrapper(
                 SimpleVideoRecordingWrapper(
                     RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
+                    # RealWorldReplayEnv(task_name=task_name, device=device, mode='eval')), # for testing training data
                 n_obs_steps=n_obs_steps,
                 n_action_steps=n_action_steps,
                 max_episode_steps=max_steps,
@@ -65,6 +68,18 @@ class RealworldRunner(BaseRunner):
 
         self.video_save_dir = f'../../../eval_videos/{self.task_name}/'
         os.makedirs(self.video_save_dir, exist_ok=True)
+
+        # Determine the filename with increment
+        base_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data'
+        file_index = 0
+        while os.path.exists(os.path.join(base_path, f'obs_dict_list_{file_index}.pkl')):
+            file_index += 1
+        self.obs_file_path = os.path.join(base_path, f'obs_dict_list_{file_index}.pkl')
+
+        actions_file_index = 0
+        while os.path.exists(os.path.join(base_path, f'actions_list_{actions_file_index}.txt')):
+            actions_file_index += 1
+        self.actions_file_path = os.path.join(base_path, f'actions_list_{actions_file_index}.txt')
 
     def run(self, policy: BasePolicy, save_video=True, use_force=False):
         device = policy.device
@@ -99,21 +114,32 @@ class RealworldRunner(BaseRunner):
                     if use_force:
                         obs_dict_input['force'] = obs_dict['force'].unsqueeze(0)
                     action_dict = policy.predict_action(obs_dict_input)
+                    # ic()
+                    # ic(action_dict['action'].shape)
 
                 np_action_dict = dict_apply(action_dict,
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
+                ic()
+                ic(action.shape)
 
                 obs_dict_list.append({k: v.cpu().numpy() for k, v in obs_dict_input.items()})
-                with open(os.path.join(self.output_dir, 'obs_dict_list.pkl'), 'wb') as f:
+                
+                with open(self.obs_file_path, 'wb') as f:
                     pickle.dump(obs_dict_list, f)
 
+                if self.fps == 30:
+                    obs, reward, done, info = env.step(action)
+                elif self.fps == 10:
+                    # ic(action.shape)
+                    obs, reward, done, info = env.step_interpolate(action, interpolate_steps=2)
+                    # ic(obs['state'].shape)
+                else:
+                    raise ValueError(f"fps {self.fps} not supported")
+
                 actions_list.append(action.tolist())
-
-                # obs, reward, done, info = env.step_interpolate(action)
-                obs, reward, done, info = env.step(action)
-
-                with open(os.path.join(self.output_dir, 'actions_list.txt'), 'w') as f:
+                
+                with open(self.actions_file_path, 'w') as f:
                     for action in actions_list:
                         f.write("%s\n" % action)
 

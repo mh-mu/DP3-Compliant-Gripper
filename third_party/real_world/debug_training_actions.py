@@ -4,12 +4,16 @@ import sys, os
 import time
 from icecream import ic
 from tqdm import tqdm
+from klampt.math import so3, se3
+from mpl_toolkits.mplot3d import Axes3D
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'UR5_IMPEDANCE')))
 
 from ur5_controller_wrapper import ur5ControlWrapper
-from klampt.math import so3, se3
 
 
 UR5_ip = '192.168.0.101'
@@ -24,20 +28,61 @@ if __name__ == "__main__":
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         actions = zarr_data['data/action'][:300]
+        images = zarr_data['data/wrist_img'][:300]
 
-        ur5_controller = ur5ControlWrapper(home_T = (R_EE_WORLD_HOME, HOME_t_obj) , ip = UR5_ip, ft_sensor=None)
-        time.sleep(2)
+        # get trans actions
+        actions = actions[:, 3:6]
 
-        # pos = ur5_controller.get_EE_transform()
-        # ic(pos)
+        # Create a video writer
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter('output.avi', fourcc, 60.0, (640, 480))
 
-        ur5_controller.set_EE_transform_linear(UR5_home_position, max_trans_v = 0.8)
-        time.sleep(1)
+        for i in tqdm(range(len(images))):
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
 
-        for action in tqdm(actions):
-            rot_vec = action[:3]
-            rot = so3.from_rotation_vector(rot_vec)
-            trans = action[3:6].tolist()
+            # Plot all actions
+            ax.scatter(actions[:, 0], actions[:, 1], actions[:, 2], label='All Actions', alpha=0.02)
 
-            ur5_controller.set_EE_transform_delta((rot, trans))
-            time.sleep(0.1)
+            # Highlight the action at the current index
+            ax.scatter(actions[i, 0], actions[i, 1], actions[i, 2], color='r', label='Current Action')
+
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            ax.legend()
+
+            # Save the plot as an image
+            plt.savefig('actions_plot.png')
+            plt.close(fig)
+
+            # Read the action plot image
+            action_img = cv2.imread('actions_plot.png')
+
+            wrist_img = (images[i] * 255).astype(np.uint8)
+
+            # Concatenate the action plot and wrist image side by side
+            combined_img = cv2.hconcat([action_img, wrist_img])
+            # Display the combined image
+            cv2.imshow('Combined Image', combined_img)
+            cv2.waitKey(1)
+
+            # Write the combined image to the video
+            out.write(combined_img)
+
+        # Release the video writer
+        out.release()
+
+        # ur5_controller = ur5ControlWrapper(home_T = (R_EE_WORLD_HOME, HOME_t_obj) , ip = UR5_ip, ft_sensor=None)
+        # time.sleep(2)
+
+        # ur5_controller.set_EE_transform_linear(UR5_home_position, max_trans_v = 0.8)
+        # time.sleep(1)
+
+        # for action in tqdm(actions):
+        #     rot_vec = action[:3]
+        #     rot = so3.from_rotation_vector(rot_vec)
+        #     trans = action[3:6].tolist()
+
+        #     ur5_controller.set_EE_transform_delta((rot, trans))
+        #     time.sleep(0.1)

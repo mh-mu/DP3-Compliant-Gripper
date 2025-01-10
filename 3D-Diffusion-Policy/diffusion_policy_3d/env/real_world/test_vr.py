@@ -43,7 +43,7 @@ R_ATI_EE = [0, math.sqrt(2)/2,math.sqrt(2)/2, 0,math.sqrt(2)/2,-math.sqrt(2)/2, 
 HOME_t_obj = [-0.6, 0, 0.08] #[-0.5, 0, 0.08]
 
 ur5 = ur5ControlWrapper(home_T=(R_EE_WORLD_HOME, HOME_t_obj) , ip=UR5_ip, ft_sensor=None)
-ur5.set_EE_transform(UR5_home_position)
+ur5.set_EE_transform_linear(UR5_home_position, max_trans_v = 1)
 time.sleep(1)
 
 init_openvr()
@@ -67,8 +67,16 @@ print("UR5 Initialized")
 # openvr.shutdown()
 # ur5.close()
 
+step_frequency = 30
+step_period = 1 / step_frequency
+target_trans_speed = 300
+target_rot_speed = 30
+trans_scale = target_trans_speed / step_frequency
+rot_scale = target_rot_speed / step_frequency
+
 prev_pose = get_controller_pose()
 for xz in range(10000):
+    start_time = time.time()
     pose = get_controller_pose()
     
     delta_pose = get_controller_pose_delta(pose, prev_pose)
@@ -82,7 +90,12 @@ for xz in range(10000):
     prev_pose = pose
     if is_trigger_active():
         ur5.set_EE_transform_delta(delta_pose)
-    time.sleep(0.1)
+    
+    
+    elapsed_time = time.time() - start_time
+    sleep_time = step_period - elapsed_time
+    if sleep_time > 0:
+        time.sleep(sleep_time)
 
 openvr.shutdown()
 ur5.close()

@@ -49,5 +49,6 @@ compliant_force_output.txt
 
 *.avi
 *.jpg
+*.png
 *.txt
 *.pkl

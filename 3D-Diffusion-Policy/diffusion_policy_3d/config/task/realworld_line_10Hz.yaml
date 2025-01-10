@@ -1,4 +1,4 @@
-name: realworld_test
+name: realworld_line_10Hz
 
 task_name: test
 
@@ -15,7 +15,7 @@ shape_meta: &shape_meta
       shape: [13]
       type: low_dimx
   action:
-    shape: [7]
+    shape: [6]
 
 env_runner: null
 

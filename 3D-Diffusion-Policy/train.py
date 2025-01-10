@@ -196,6 +196,10 @@ class TrainDP3Workspace:
                     leave=False, mininterval=cfg.training.tqdm_interval_sec) as tepoch:
                 for batch_idx, batch in enumerate(tepoch):
                     t1 = time.time()
+                    # ic()
+                    # ic(batch['obs']['wrist_img'].shape)
+                    # ic(batch['obs']['state'].shape)
+                    # ic(batch['action'].shape)
                     # device transfer
                     batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
                     if train_sampling_batch is None:

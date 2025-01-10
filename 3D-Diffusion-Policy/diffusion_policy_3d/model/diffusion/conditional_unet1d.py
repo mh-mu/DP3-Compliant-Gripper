@@ -9,7 +9,7 @@ from termcolor import cprint
 from diffusion_policy_3d.model.diffusion.conv1d_components import (
     Downsample1d, Upsample1d, Conv1dBlock)
 from diffusion_policy_3d.model.diffusion.positional_embedding import SinusoidalPosEmb
-
+from icecream import ic
 
 
 logger = logging.getLogger(__name__)
@@ -111,14 +111,27 @@ class ConditionalResidualBlock1D(nn.Module):
             returns:
             out : [ batch_size x out_channels x horizon ]
         '''
+        # ic()
+        # ic(x.shape)
         out = self.blocks[0](x)  
+        # ic()
+        # ic(out.shape)
         if cond is not None:      
             if self.condition_type == 'film':
                 embed = self.cond_encoder(cond)
+                # ic()
+                # ic(cond.shape)
+                # ic(embed.shape)
                 embed = embed.reshape(embed.shape[0], 2, self.out_channels, 1)
+                # ic()
+                # ic(embed.shape)
                 scale = embed[:, 0, ...]
                 bias = embed[:, 1, ...]
                 out = scale * out + bias
+                # ic()
+                # ic(scale.shape)
+                # ic(bias.shape)
+                # ic(out.shape)
             elif self.condition_type == 'add':
                 embed = self.cond_encoder(cond)
                 out = out + embed
@@ -142,7 +155,11 @@ class ConditionalResidualBlock1D(nn.Module):
             else:
                 raise NotImplementedError(f"condition_type {self.condition_type} not implemented")
         out = self.blocks[1](out)
+        # ic()
+        # ic(out.shape)
         out = out + self.residual_conv(x)
+        # ic()
+        # ic(out.shape)
         return out
 
 
@@ -271,7 +288,13 @@ class ConditionalUnet1D(nn.Module):
         global_cond: (B,global_cond_dim)
         output: (B,T,input_dim)
         """
+        # ic()
+        # ic(sample.shape)
+        # ic(timestep.shape)
+        # ic(global_cond.shape)
         sample = einops.rearrange(sample, 'b h t -> b t h')
+        # ic()
+        # ic(sample.shape)
 
         # 1. time
         timesteps = timestep
@@ -282,12 +305,19 @@ class ConditionalUnet1D(nn.Module):
             timesteps = timesteps[None].to(sample.device)
         # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
         timesteps = timesteps.expand(sample.shape[0])
+        # ic()
+        # ic(timesteps.shape)
 
         timestep_embed = self.diffusion_step_encoder(timesteps)
+        # ic()
+        # ic(timestep_embed.shape)
         if global_cond is not None:
             if self.condition_type == 'cross_attention':
                 timestep_embed = timestep_embed.unsqueeze(1).expand(-1, global_cond.shape[1], -1)
             global_feature = torch.cat([timestep_embed, global_cond], axis=-1)
+            # ic()
+            # ic(global_cond.shape)
+            # ic(global_feature.shape)
 
 
         # encode local features
@@ -301,13 +331,19 @@ class ConditionalUnet1D(nn.Module):
             h_local.append(x)
         
         x = sample
+        # ic()
+        # ic(x.shape)
         h = []
         for idx, (resnet, resnet2, downsample) in enumerate(self.down_modules):
             if self.use_down_condition:
                 x = resnet(x, global_feature)
+                # ic()
+                # ic(x.shape)
                 if idx == 0 and len(h_local) > 0:
                     x = x + h_local[0]
                 x = resnet2(x, global_feature)
+                # ic()
+                # ic(x.shape)
             else:
                 x = resnet(x)
                 if idx == 0 and len(h_local) > 0:
@@ -315,31 +351,57 @@ class ConditionalUnet1D(nn.Module):
                 x = resnet2(x)
             h.append(x)
             x = downsample(x)
-
+            # ic()
+            # print('down modules')
+            # ic(x.shape)
+        
         for mid_module in self.mid_modules:
             if self.use_mid_condition:
                 x = mid_module(x, global_feature)
+                # ic()
+                # print('mid modules')
+                # ic(x.shape)
             else:
                 x = mid_module(x)
 
+        # ic([item.shape for item in h])
+
         for idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
-            x = torch.cat((x, h.pop()), dim=1)
+            # ic(x.shape)
+            popped_h = h.pop()
+            # ic(popped_h.shape)
+            x = torch.cat((x, popped_h), dim=1)
+            # ic()
+            # ic(x.shape)
             if self.use_up_condition:
                 x = resnet(x, global_feature)
+                # ic()
+                # ic(x.shape)
                 if idx == len(self.up_modules) and len(h_local) > 0:
                     x = x + h_local[1]
                 x = resnet2(x, global_feature)
+                # ic()
+                # ic(x.shape)
             else:
                 x = resnet(x)
                 if idx == len(self.up_modules) and len(h_local) > 0:
                     x = x + h_local[1]
                 x = resnet2(x)
             x = upsample(x)
+            # ic()
+            # print('up modules')
+            # ic(x.shape)
 
 
         x = self.final_conv(x)
+        # ic()
+        # print('final conv')
+        # ic(x.shape)
 
         x = einops.rearrange(x, 'b t h -> b h t')
+        # ic()
+        # print('rearrange x')
+        # ic(x.shape)
 
         return x
 

@@ -1,5 +1,5 @@
 import zarr
-
+from icecream import ic
 
 def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
     # Create a new zarr group for the combined dataset
@@ -11,7 +11,11 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
                 new_group = target_group.create_group(key)
                 copy_group(item, new_group)
             else:
-                target_group[key] = item[::stepskip].astype('float16')
+                if key == 'action':
+                    # Sum the actions when skipping
+                    target_group[key] = [item[i:i+stepskip].sum(axis=0).astype('float16') for i in range(0, len(item), stepskip)]
+                else:
+                    target_group[key] = item[::stepskip].astype('float16')
 
     def append_group(source_group, target_group):
         for key, item in source_group.items():
@@ -23,9 +27,18 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
                 append_group(item, new_group)
             else:
                 if key in target_group:
-                    target_group[key].append(item[::stepskip].astype('float16'), axis=0)
+                    if key == 'action':
+                        # Sum the actions when skipping
+                        new_data = [item[i:i+stepskip].sum(axis=0).astype('float16') for i in range(0, len(item), stepskip)]
+                        target_group[key].append(new_data, axis=0)
+                    else:
+                        target_group[key].append(item[::stepskip].astype('float16'), axis=0)
                 else:
-                    target_group[key] = item[::stepskip].astype('float16')
+                    if key == 'action':
+                        # Sum the actions when skipping
+                        target_group[key] = [item[i:i+stepskip].sum(axis=0).astype('float16') for i in range(0, len(item), stepskip)]
+                    else:
+                        target_group[key] = item[::stepskip].astype('float16')
 
     # Copy the first dataset into the combined dataset
     first_dataset = zarr.open(dataset_paths[0], mode='r')
@@ -42,11 +55,11 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
 
 if __name__ == "__main__":
     dataset_paths = [
-        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_line_expert.zarr'
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_circle_new_actions_expert.zarr'
     ]
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_line_10Hz_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_circle_10Hz_expert.zarr'
 
-    # combine_multiple_zarr_datasets(dataset_paths, output_path)
+    combine_multiple_zarr_datasets(dataset_paths, output_path)
 
     # Modify 'meta/episode_ends' list
     combined_dataset = zarr.open(output_path, mode='r+')

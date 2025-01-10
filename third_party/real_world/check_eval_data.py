@@ -1,5 +1,4 @@
 import pickle
-from PIL import Image
 import numpy as np
 import cv2
 
@@ -9,6 +8,9 @@ with open('obs_dict_list.pkl', 'rb') as file:
 
 # Print the number of items in the pickle file
 print(f"Number of items in the pickle file: {len(data)}")
+
+# Print all keys in the first dictionary in the list
+print(f"Keys in the first dictionary: {data[0].keys()}")
 
 # Print the shape of the item with key 'wrist_img'
 if 'wrist_img' in data[0]:

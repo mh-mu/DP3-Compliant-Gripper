@@ -5,18 +5,25 @@ import matplotlib.pyplot as plt
 from check_zarr_data import read_zarr_folder
 
 # Read the Zarr folder
-folder_path = "../../3D-Diffusion-Policy/data/real-world_line_expert.zarr"
+folder_path = "../../3D-Diffusion-Policy/data/real-world_line_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
 if zarr_data:
     training_actions = zarr_data['data/action'][:]
 else:
     raise Exception("Error reading Zarr data")
 
+# folder_path2 = "../../3D-Diffusion-Policy/data/real-world_line_expert.zarr"
+# zarr_data2 = read_zarr_folder(folder_path2)
+# if zarr_data2:
+#     training_actions2 = zarr_data2['data/action'][:]
+# else:
+#     raise Exception("Error reading Zarr data")
+
 # Initialize an empty list to store the actions
 actions_list = []
 
 # Load the nested lists from actions_list.txt
-with open('actions_list.txt', 'r') as file:
+with open('rollout_data/actions_list_23.txt', 'r') as file:
     for line in file:
         # Parse each line as a separate list and append to actions_list
         actions_list.append(ast.literal_eval(line.strip()))
@@ -41,15 +48,27 @@ predicted_actions_6d = actions_array_6d.reshape(-1, actions_array_6d.shape[2])
 training_actions_6d = training_actions[:, 3:6]
 # training_actions_6d = training_actions[:, :3]
 
+# training_actions_3d = training_actions[:, 3:6]
+# training_actions2_3d = training_actions2[:, 3:6]
+
+# # Calculate and print the average of both arrays along the columns
+# average_training_actions_3d = np.mean(training_actions_3d, axis=0)
+# average_training_actions2_3d = np.mean(training_actions2_3d, axis=0)
+
+# print("Average of training_actions_3d along the columns:", average_training_actions_3d)
+# print("Average of training_actions2_3d along the columns:", average_training_actions2_3d)
+
 # Plot 3D plot of the two arrays
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection='3d')
 
 # Plot training actions
 ax.scatter(training_actions_6d[:, 0], training_actions_6d[:, 1], training_actions_6d[:, 2], alpha=0.02, label='Training Actions', c='blue')
+# ax.scatter(training_actions_3d[:, 0], training_actions_3d[:, 1], training_actions_3d[:, 2], alpha=0.02, label='Training Actions', c='blue')
 
 # Plot predicted actions
 ax.scatter(predicted_actions_6d[:, 0], predicted_actions_6d[:, 1], predicted_actions_6d[:, 2], alpha=0.5, label='Predicted Actions', c='red')
+# ax.scatter(training_actions2_3d[:, 0], training_actions2_3d[:, 1], training_actions2_3d[:, 2], alpha=0.02, label='Training Actions', c='red')
 
 ax.set_title('3D Plot of Training and Predicted Actions (trans)')
 ax.set_xlabel('Dimension 1')
@@ -58,23 +77,3 @@ ax.set_zlabel('Dimension 3')
 ax.legend()
 plt.show()
 
-# # Reshape the array to 2D for t-SNE
-# predicted_actions_6d = actions_array_6d.reshape(-1, actions_array_6d.shape[2])
-
-# # Perform t-SNE
-# tsne = TSNE(n_components=2, random_state=42)
-# tsne_results = tsne.fit_transform(predicted_actions_6d)
-
-# # Perform t-SNE on training actions
-# tsne_training = TSNE(n_components=2, random_state=42)
-# tsne_training_results = tsne_training.fit_transform(training_actions_6d)
-
-# # Plot both the training actions and predicted actions
-# plt.figure(figsize=(10, 8))
-# plt.scatter(tsne_training_results[:, 0], tsne_training_results[:, 1], alpha=0.5, label='Training Actions', c='blue')
-# plt.scatter(tsne_results[:, 0], tsne_results[:, 1], alpha=0.5, label='Predicted Actions', c='red')
-# plt.title('t-SNE Visualization of Training and Predicted Actions (First 6 Dimensions)')
-# plt.xlabel('t-SNE Component 1')
-# plt.ylabel('t-SNE Component 2')
-# plt.legend()
-# plt.savefig('tsne_plot_combined_6d.jpg', format='jpg')

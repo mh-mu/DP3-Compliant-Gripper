@@ -11,6 +11,7 @@ from cprint import *
 import hydra
 import pathlib
 from omegaconf import DictConfig
+from icecream import ic
 
 @hydra.main(config_name="dp3_realworld.yaml",
             version_base=None,
@@ -18,22 +19,27 @@ from omegaconf import DictConfig
                 'diffusion_policy_3d', 'config'))
 )
 def main(cfg: DictConfig):
-    print(cfg.keys())
+    ic()
+    ic(cfg['task_name']) # TODO: find out where to input task yaml during rollout
     training_use_ema = False
 
     workspace = TrainDP3Workspace(cfg=cfg)
 
     # best_ckpt_path = workspace.get_checkpoint_path(tag="best")
-    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_line_30Hz-dp3_realworld-0001_seed0/checkpoints'
-    # ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_line_10Hz-dp3_realworld-0001_seed0/checkpoints'
+    # ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_circle_30Hz-dp3_realworld-1030_seed0/checkpoints'
+    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_circle_10Hz-dp3_realworld-1010_seed0/checkpoints'
     best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("latest.ckpt")
     if best_ckpt_path.is_file():
         print(f"Resuming from checkpoint {best_ckpt_path}")
         workspace.load_checkpoint(path=best_ckpt_path)
 
-    # TODO: change runner settings
     env_runner = RealworldRunner(output_dir='./',
-                                eval_episodes=5,)
+                                eval_episodes=10,
+                                max_steps=300,
+                                # fps=30, # 30Hz
+                                fps=10, # 10Hz
+                                n_obs_steps=2,
+                                n_action_steps=4,)
     # assert isinstance(env_runner, BaseRunner) # TODO: why not instance
 
     policy = workspace.model
