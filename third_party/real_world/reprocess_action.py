@@ -33,9 +33,9 @@ def copy_group(source_group, target_group):
                 ic(target_group[key].shape)
 
 if __name__ == "__main__":
-    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_circle_expert.zarr'
+    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_expert.zarr'
     
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_circle_new_actions_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_new_actions_expert.zarr'
 
     new_dataset = zarr.open(output_path, mode='w')
     # Copy the first dataset into the combined dataset
@@ -45,5 +45,5 @@ if __name__ == "__main__":
     # Modify 'meta/episode_ends' list
     combined_dataset = zarr.open(output_path, mode='r+')
     total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(100, total_num_step + 1, 100))
+    combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
     print(combined_dataset['meta/episode_ends'][:])

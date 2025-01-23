@@ -31,7 +31,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 450
+        self.episode_length = self._max_episode_steps = 600
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -74,11 +74,13 @@ class RealWorldEnv(gym.Env):
         else:
             raise ValueError(f'Unrecognized finger type. Finger type should be compliant or rigid, got {finger_type} instead.')
         
-        self.step_frequency = 30
-        # self.step_frequency = 10 # TODO: change this
+        # self.step_frequency = 30
+        self.step_frequency = 10 # TODO: change this
         self.step_period = 1 / self.step_frequency
         self.target_trans_speed = 2e1
         self.target_rot_speed = 3e1
+        # self.target_trans_speed = 2e2
+        # self.target_rot_speed = 3e2
         if self.demo_device == 'spacemouse':
             self.trans_scale = 14 * self.step_period
             self.rot_scale = 1e3 * self.step_period
@@ -86,12 +88,19 @@ class RealWorldEnv(gym.Env):
             self.trans_scale = self.target_trans_speed / self.step_frequency
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
-        self.cap = cv2.VideoCapture(2)
+        self.cap = cv2.VideoCapture(3)
+        ic('started camera')
         if not self.cap.isOpened():
             print("Error: Could not open webcam.")
             exit()
         
         self.ur5_action_list = []
+        self.force_list = []
+
+        # # Create a window to display forces in real-time
+        # self.force_window_name = "Real-Time Forces"
+        # cv2.namedWindow(self.force_window_name, cv2.WINDOW_NORMAL)
+        # self.force_display_img = np.zeros((300, 600, 3), dtype=np.uint8)
 
     def get_robot_state(self):
         '''
@@ -134,19 +143,26 @@ class RealWorldEnv(gym.Env):
 
         # perform actions
         rot_vec = action[:3]
-        rot = so3.from_rotation_vector(rot_vec)
         trans = action[3:6].tolist()
 
-        # record the previous action performed by the UR5
-        current_pose = self.ur5_controller.get_EE_transform()
-        delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
-        self.ur5_action_list.append(delta_position)
-        with open('ur5_action_list.pkl', 'wb') as f:
-            pickle.dump(self.ur5_action_list, f)
-        self.previous_pose = current_pose
+        # cap rotation and translation actions
+        if np.any(np.abs(rot_vec) > 0.02) or np.any(np.abs(trans) > 0.005):
+            rot_vec = np.zeros_like(rot_vec)
+            trans = np.zeros_like(trans)
+        
+        rot = so3.from_rotation_vector(rot_vec)
+
+        # # record the previous action performed by the UR5 (for debugging)
+        # current_pose = self.ur5_controller.get_EE_transform()
+        # delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
+        # self.ur5_action_list.append(delta_position)
+        # with open('ur5_action_list.pkl', 'wb') as f:
+        #     pickle.dump(self.ur5_action_list, f)
+        # self.previous_pose = current_pose
+
 
         if self.mode == 'train':
-            self.ur5_controller.set_EE_transform_delta((rot, trans))
+            self.ur5_controllebrightnessr.set_EE_transform_delta((rot, trans))
         elif self.mode == 'eval':
             # print('The predicted action is:', rot_vec, trans)
             # print('Execute action? (y/n)')
@@ -155,7 +171,7 @@ class RealWorldEnv(gym.Env):
             # else:
             #     print('Action not executed. Exiting...')
             #     exit()
-            self.ur5_controller.set_EE_transform_delta((rot, trans))
+            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.2, max_rot_v=0.1)
         
         # gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: 
@@ -172,6 +188,25 @@ class RealWorldEnv(gym.Env):
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()
         robot_force = self.get_robot_force()
+
+        # # display realtime force values for demo collection
+        # self.force_display_img.fill(0)
+        # bar_width = 50
+        # max_force = np.max(np.abs(robot_force)) + 1
+        # for i, force in enumerate(robot_force):
+        #     color = (255, 255, 0) if i == 0 else (0, 255, 0) if i == 1 else (0, 255, 255)
+        #     start_point = (i * 200 + 100, 150)
+        #     end_point = (i * 200 + 100, 150 - int(force / max_force * 100))
+        #     cv2.line(self.force_display_img, start_point, end_point, color, bar_width)
+        #     cv2.putText(self.force_display_img, f'{force:.2f}', (i * 200 + 75, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, cv2.LINE_AA)
+        # cv2.imshow(self.force_window_name, self.force_display_img)
+        # cv2.waitKey(1)
+
+        ic(robot_force)
+        # record the forces during rollout (for debugging)
+        self.force_list.append(robot_force)
+        with open('force_list.pkl', 'wb') as f:
+            pickle.dump(self.force_list, f)
 
         if obs_pixels.shape[0] != 3:
             obs_pixels = obs_pixels.transpose(2, 0, 1)
@@ -206,9 +241,12 @@ class RealWorldEnv(gym.Env):
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()
 
-        self.previous_pose = self.ur5_controller.get_EE_transform()
-        with open('ur5_action_list.pkl', 'wb') as f:
-            pickle.dump(self.ur5_action_list, f)
+        # self.previous_pose = self.ur5_controller.get_EE_transform()
+        # with open('ur5_action_list.pkl', 'wb') as f:
+        #     pickle.dump(self.ur5_action_list, f)
+
+        with open('force_list.pkl', 'wb') as f:
+            pickle.dump(self.force_list, f)
 
         self.cur_step = 0
 

@@ -24,33 +24,48 @@ t = [-0.5719669638367115, -0.13510426694812794, 0.00818264088493828]
 UR5_home_position = (R, t)
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_line_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        actions = zarr_data['data/action'][:300]
-        images = zarr_data['data/wrist_img'][:300]
+        actions = zarr_data['data/action'][:1200]
+        images = zarr_data['data/wrist_img'][:1200]
 
         # get trans actions
-        actions = actions[:, 3:6]
+        trans_actions = actions[:, 3:6]
 
         # Create a video writer
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('output.avi', fourcc, 60.0, (640, 480))
+        out = cv2.VideoWriter('debug_training_action.avi', fourcc, 10.0, (1280, 480))
+
+        # Determine the bounds for the action plot
+        x_min, x_max = np.min(trans_actions[:, 0]) / 5, np.max(trans_actions[:, 0]) / 2
+        y_min, y_max = np.min(trans_actions[:, 1]), np.max(trans_actions[:, 1]) / 10
+        z_min, z_max = np.min(trans_actions[:, 2]), np.max(trans_actions[:, 2]) / 10
 
         for i in tqdm(range(len(images))):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
 
             # Plot all actions
-            ax.scatter(actions[:, 0], actions[:, 1], actions[:, 2], label='All Actions', alpha=0.02)
+            ax.scatter(trans_actions[:, 0], trans_actions[:, 1], trans_actions[:, 2], label='All Actions', alpha=0.1)
 
             # Highlight the action at the current index
-            ax.scatter(actions[i, 0], actions[i, 1], actions[i, 2], color='r', label='Current Action')
+            ax.scatter(trans_actions[i, 0], trans_actions[i, 1], trans_actions[i, 2], color='r', label='Current Action')
+
+            # Print the values of the plotted action in the plot
+            ax.text2D(0.05, 1.00, 
+                      f'Current Action: ({trans_actions[i, 0]:.6f}, {trans_actions[i, 1]:.6f}, {trans_actions[i, 2]:.6f})', 
+                      transform=ax.transAxes, color='red')
 
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('Z')
             ax.legend()
+
+            # Set the axis limits to zoom in on the region where there are actions
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+            ax.set_zlim(z_min, z_max)
 
             # Save the plot as an image
             plt.savefig('actions_plot.png')
@@ -61,11 +76,11 @@ if __name__ == "__main__":
 
             wrist_img = (images[i] * 255).astype(np.uint8)
 
+            # Resize the action plot image to match the wrist image height
+            action_img = cv2.resize(action_img, (640, 480))
+
             # Concatenate the action plot and wrist image side by side
-            combined_img = cv2.hconcat([action_img, wrist_img])
-            # Display the combined image
-            cv2.imshow('Combined Image', combined_img)
-            cv2.waitKey(1)
+            combined_img = cv2.hconcat([wrist_img, action_img])
 
             # Write the combined image to the video
             out.write(combined_img)

@@ -6,9 +6,10 @@ from icecream import ic
 import sys, os
 
 from T42_controller import T42_controller
-# from CONSTANTS import finger_offset_positions, gripper_port
-finger_offset_positions = [0.12, 0.1]
-gripper_port = '/dev/ttyUSB0'
+from CONSTANTS import finger_offset_positions_compliant, finger_offset_positions_rigid, gripper_port
+# finger_offset_positions = [0.12, 0.1]
+# finger_offset_positions_compliant = [0.1, 0.15]
+# gripper_port = '/dev/ttyUSB0'
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'openhand_node', 'src', 'openhand_node')))
 from hands import Model_T42
@@ -16,7 +17,8 @@ from hands import Model_T42
 # finger_offset_positions = [0.1, 0.17]
 # finger_offset_positions = [0.2, 0.14]
 
-gripper = T42_controller(finger_offset_positions, finger_type='rigid', port=gripper_port, data_collection_mode=False)
+# gripper = T42_controller(finger_offset_positions_rigid, finger_type='rigid', port=gripper_port, data_collection_mode=False)
+gripper = T42_controller(finger_offset_positions_compliant, finger_type='compliant', port=gripper_port, data_collection_mode=False)
 ic(gripper.read_motor_positions())
 # gripper.release()
 time.sleep(1)

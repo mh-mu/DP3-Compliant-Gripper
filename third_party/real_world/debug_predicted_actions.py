@@ -7,7 +7,7 @@ from icecream import ic
 from tqdm import tqdm
 
 
-data_index = 4
+data_index = 0
 
 # Load the pickle file
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:
@@ -52,6 +52,8 @@ for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
         act = act_block[0]
         if j == i:
             ax.scatter(act[3], act[4], act[5], c='b', marker='o')
+            # Annotate the current action at a fixed position
+            ax.text2D(0.05, 0.95, f'({act[3]:.6f}, {act[4]:.6f}, {act[5]:.6f})', transform=ax.transAxes, color='blue')
         else:
             ax.scatter(act[3], act[4], act[5], c='r', marker='o', alpha=0.1)
     

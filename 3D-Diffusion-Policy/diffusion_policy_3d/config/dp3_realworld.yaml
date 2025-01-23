@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - task: realworld_line_10Hz
+  - task: realworld_contact_compliant_10Hz
 
 name: train_dp3_realworld
 
