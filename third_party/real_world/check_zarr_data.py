@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_multicam_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print("Contents of the Zarr group:")
@@ -47,8 +47,8 @@ if __name__ == "__main__":
         '''
         save wrist_img as video
         '''
-        images = zarr_data['data/wrist_img'][-1200:]
-        # images = zarr_data['data/wrist_img'][:]
+        # images = zarr_data['data/wrist_img'][-1200:]
+        images = zarr_data['data/wrist_img'][-600:]
 
         height, width, layers = images[0].shape
         video = cv2.VideoWriter('wrist_img_video_contact_compliant.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
@@ -59,6 +59,32 @@ if __name__ == "__main__":
 
         video.release()
         print("Video saved as wrist_img_video.avi")
+
+
+        images = zarr_data['data/gripper_img'][-600:]
+
+        height, width, layers = images[0].shape
+        video = cv2.VideoWriter('gripper_img_video_contact_compliant.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
+
+        for image in images:
+            image = (image * 255).astype('uint8')
+            video.write(image)
+
+        video.release()
+        print("Video saved as gripper_img_video.avi")
+
+
+        images = zarr_data['data/third_view_img'][-600:]
+
+        height, width, layers = images[0].shape
+        video = cv2.VideoWriter('3rd_view_img_video_contact_compliant.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
+
+        for image in images:
+            image = (image * 255).astype('uint8')
+            video.write(image)
+
+        video.release()
+        print("Video saved as 3rd_view_img_video.avi")
 
         '''
         plot forces

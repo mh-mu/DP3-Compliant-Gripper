@@ -33,9 +33,9 @@ def copy_group(source_group, target_group):
                 ic(target_group[key].shape)
 
 if __name__ == "__main__":
-    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_expert.zarr'
+    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_multicam_expert.zarr'
     
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_new_actions_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_multicam_new_actions_expert.zarr'
 
     new_dataset = zarr.open(output_path, mode='w')
     # Copy the first dataset into the combined dataset

@@ -24,6 +24,7 @@ from klampt.math import so3, se3
 from diffusion_policy_3d.env.real_world import CONSTANTS
 import keyboard
 from icecream import ic 
+import atexit
 
 seed = np.random.randint(0, 100)
 
@@ -89,6 +90,8 @@ def main(args):
 		done = False
 
 		wrist_img_arrays_sub = []
+		gripper_img_arrays_sub = []
+		third_view_img_arrays_sub = []
 		force_arrays_sub = []
 		state_arrays_sub = []
 		action_arrays_sub = []
@@ -102,10 +105,14 @@ def main(args):
 			total_count_sub += 1
 			
 			obs_wrist_img = obs_dict['wrist_img']
+			obs_gripper_img = obs_dict['gripper_img']
+			obs_third_view_img = obs_dict['third_view_img']
 			obs_force = obs_dict['force']
 			obs_robot_state = obs_dict['state']
 
 			wrist_img_arrays_sub.append(obs_wrist_img)
+			gripper_img_arrays_sub.append(obs_gripper_img)
+			third_view_img_arrays_sub.append(obs_third_view_img)
 			force_arrays_sub.append(obs_force)
 			state_arrays_sub.append(obs_robot_state)
 			
@@ -181,6 +188,12 @@ def main(args):
 		wrist_img_arrays_sub = np.stack(wrist_img_arrays_sub, axis=0)
 		if wrist_img_arrays_sub.shape[1] == 3: # make channel last
 			wrist_img_arrays_sub = np.transpose(wrist_img_arrays_sub, (0,2,3,1))
+		gripper_img_arrays_sub = np.stack(gripper_img_arrays_sub, axis=0)
+		if gripper_img_arrays_sub.shape[1] == 3: # make channel last
+			gripper_img_arrays_sub = np.transpose(gripper_img_arrays_sub, (0,2,3,1))
+		third_view_img_arrays_sub = np.stack(third_view_img_arrays_sub, axis=0)
+		if third_view_img_arrays_sub.shape[1] == 3: # make channel last
+			third_view_img_arrays_sub = np.transpose(third_view_img_arrays_sub, (0,2,3,1))
 		force_arrays_sub = np.stack(force_arrays_sub, axis=0)
 		state_arrays_sub = np.stack(state_arrays_sub, axis=0)
 		action_arrays_sub = np.stack(action_arrays_sub, axis=0)
@@ -190,6 +203,16 @@ def main(args):
 			zarr_data.create_dataset('wrist_img', data=wrist_img_arrays_sub, chunks=(100, *wrist_img_arrays_sub.shape[1:]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
 		else:
 			zarr_data['wrist_img'].append(wrist_img_arrays_sub)
+
+		if 'gripper_img' not in zarr_data:
+			zarr_data.create_dataset('gripper_img', data=gripper_img_arrays_sub, chunks=(100, *gripper_img_arrays_sub.shape[1:]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['gripper_img'].append(gripper_img_arrays_sub)
+
+		if 'third_view_img' not in zarr_data:
+			zarr_data.create_dataset('third_view_img', data=third_view_img_arrays_sub, chunks=(100, *third_view_img_arrays_sub.shape[1:]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
+		else:
+			zarr_data['third_view_img'].append(third_view_img_arrays_sub)
 
 		if 'force' not in zarr_data:
 			zarr_data.create_dataset('force', data=force_arrays_sub, chunks=(100, force_arrays_sub.shape[1]), dtype='float16', compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=1))
@@ -216,16 +239,25 @@ def main(args):
 		cprint(f'-'*50, 'cyan')
 		# print shape
 		cprint(f'wrist img shape: {zarr_data["wrist_img"].shape}, range: [{zarr_data["wrist_img"][:].min()}, {zarr_data["wrist_img"][:].max()}]', 'green')
+		cprint(f'gripper img shape: {zarr_data["gripper_img"].shape}, range: [{zarr_data["gripper_img"][:].min()}, {zarr_data["gripper_img"][:].max()}]', 'green')
+		cprint(f'third view img shape: {zarr_data["third_view_img"].shape}, range: [{zarr_data["third_view_img"][:].min()}, {zarr_data["third_view_img"][:].max()}]', 'green')
 		cprint(f'force shape: {zarr_data["force"].shape}, range: [{zarr_data["force"][:].min()}, {zarr_data["force"][:].max()}]', 'green')
 		cprint(f'state shape: {zarr_data["state"].shape}, range: [{zarr_data["state"][:].min()}, {zarr_data["state"][:].max()}]', 'green')
 		cprint(f'action shape: {zarr_data["action"].shape}, range: [{zarr_data["action"][:].min()}, {zarr_data["action"][:].max()}]', 'green')
 		cprint(f'Saved zarr file to {save_dir}', 'green')
 
 	# clean up
-	del episode_ends_arrays
+	del episode_ends_arrays, wrist_img_arrays_sub, gripper_img_arrays_sub, third_view_img_arrays_sub, force_arrays_sub, state_arrays_sub, action_arrays_sub
 	del zarr_root, zarr_data, zarr_meta
 
-	e.cap.release()
+	def release_resources():
+		e.cap_wrist.release()
+		e.cap_gripper.release()
+		e.cap_third_view.release()
+		openvr.shutdown()
+		print("Exited out of webcam capture and openvr")
+
+	atexit.register(release_resources)
 	openvr.shutdown()
 
 
