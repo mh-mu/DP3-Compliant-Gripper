@@ -7,7 +7,7 @@ from icecream import ic
 from tqdm import tqdm
 
 
-data_index = 0
+data_index = 14
 
 # Load the pickle file
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:

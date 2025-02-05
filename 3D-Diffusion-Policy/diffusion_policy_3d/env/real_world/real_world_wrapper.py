@@ -93,21 +93,29 @@ class RealWorldEnv(gym.Env):
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
         self.cap_wrist = cv2.VideoCapture(2)
-        self.cap_gripper = cv2.VideoCapture(5)
-        self.cap_third_view = cv2.VideoCapture(9)
+        # self.cap_gripper = cv2.VideoCapture(8)
+        # self.cap_third_view = cv2.VideoCapture(5)
         ic('started cameras')
         if not self.cap_wrist.isOpened():
             print("Error: Could not open wrist camera.")
             exit()
-        if not self.cap_gripper.isOpened():
-            print("Error: Could not open gripper camera.")
-            exit()
-        if not self.cap_third_view.isOpened():
-            print("Error: Could not open third view camera.")
-            exit()
+        # if not self.cap_gripper.isOpened():
+        #     print("Error: Could not open gripper camera.")
+        #     exit()
+        # if not self.cap_third_view.isOpened():
+        #     print("Error: Could not open third view camera.")
+        #     exit()
         
-        self.ur5_action_list = []
-        self.force_list = []
+        if self.mode == 'eval':
+            self.ur5_action_list = []
+            self.force_list = []
+            save_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data'
+            os.makedirs(save_dir, exist_ok=True)
+            file_index = 0
+            self.save_path = os.path.join(save_dir, f'force_list_{file_index}.pkl')
+            while os.path.exists(self.save_path):
+                file_index += 1
+                self.save_path = os.path.join(save_dir, f'force_list_{file_index}.pkl')
 
         if self.mode == 'train':
             # Create a window to display forces in real-time
@@ -125,40 +133,42 @@ class RealWorldEnv(gym.Env):
 
     def get_rgb(self):
         ret_wrist, img_wrist = self.cap_wrist.read()
-        ret_gripper, img_gripper = self.cap_gripper.read()
-        ret_third_view, img_third_view = self.cap_third_view.read()
+        # ret_gripper, img_gripper = self.cap_gripper.read()
+        # ret_third_view, img_third_view = self.cap_third_view.read()
         if not ret_wrist:
             print("Error: Could not read wrist camera frame.")
-        if not ret_gripper:
-            print("Error: Could not read gripper camera frame.")
-        if not ret_third_view:
-            print("Error: Could not read third view camera frame.")
-        return img_wrist, img_gripper, img_third_view
+        # if not ret_gripper:
+        #     print("Error: Could not read gripper camera frame.")
+        # if not ret_third_view:
+        #     print("Error: Could not read third view camera frame.")
+        # return img_wrist, img_gripper, img_third_view
+        return img_wrist
     
     def get_robot_force(self):
         force = self.ur5_controller.get_EE_wrench()[0:3]
         return np.array(force)
 
     def get_visual_obs(self):
-        img_wrist, img_gripper, img_third_view = self.get_rgb()
+        # img_wrist, img_gripper, img_third_view = self.get_rgb()
+        img_wrist = self.get_rgb()
         robot_state = self.get_robot_state()
         robot_force = self.get_robot_force()
 
         if img_wrist.shape[0] != 3:
             img_wrist = img_wrist.transpose(2, 0, 1)
-        if img_gripper.shape[0] != 3:
-            img_gripper = img_gripper.transpose(2, 0, 1)
-        if img_third_view.shape[0] != 3:
-            img_third_view = img_third_view.transpose(2, 0, 1)
+        # if img_gripper.shape[0] != 3:
+        #     img_gripper = img_gripper.transpose(2, 0, 1)
+        # if img_third_view.shape[0] != 3:
+        #     img_third_view = img_third_view.transpose(2, 0, 1)
 
         img_wrist = img_wrist.astype(np.float32) / 255
-        img_gripper = img_gripper.astype(np.float32) / 255
-        img_third_view = img_third_view.astype(np.float32) / 255
+        # img_gripper = img_gripper.astype(np.float32) / 255
+        # img_third_view = img_third_view.astype(np.float32) / 255
 
         obs_dict = {
             'wrist_img': img_wrist,
-            'gripper_img': img_gripper,
-            'third_view_img': img_third_view,
+            # 'gripper_img': img_gripper,
+            # 'third_view_img': img_third_view,
             'force': robot_force,
             'state': robot_state,
         }
@@ -169,7 +179,7 @@ class RealWorldEnv(gym.Env):
         start_time = time.time()
 
         # perform actions
-        rot_vec = action[:3]
+        rot_vec = action[:3] # TODO: change action to interpret as 6d rotation
         trans = action[3:6].tolist()
 
         # cap rotation and translation actions
@@ -212,7 +222,8 @@ class RealWorldEnv(gym.Env):
 
         self.cur_step += 1
 
-        img_wrist, img_gripper, img_third_view = self.get_rgb()
+        # img_wrist, img_gripper, img_third_view = self.get_rgb()
+        img_wrist = self.get_rgb()
         robot_state = self.get_robot_state()
         robot_force = self.get_robot_force()
 
@@ -232,25 +243,26 @@ class RealWorldEnv(gym.Env):
 
         # ic(robot_force)
         # record the forces during rollout (for debugging)
-        self.force_list.append(robot_force)
-        with open('force_list.pkl', 'wb') as f:
-            pickle.dump(self.force_list, f)
+        if self.mode == 'eval':
+            self.force_list.append(robot_force)
+            with open(self.save_path, 'wb') as f:
+                pickle.dump(self.force_list, f)
 
         if img_wrist.shape[0] != 3:
             img_wrist = img_wrist.transpose(2, 0, 1)
-        if img_gripper.shape[0] != 3:
-            img_gripper = img_gripper.transpose(2, 0, 1)
-        if img_third_view.shape[0] != 3:
-            img_third_view = img_third_view.transpose(2, 0, 1)
+        # if img_gripper.shape[0] != 3:
+        #     img_gripper = img_gripper.transpose(2, 0, 1)
+        # if img_third_view.shape[0] != 3:
+        #     img_third_view = img_third_view.transpose(2, 0, 1)
 
         img_wrist = img_wrist.astype(np.float32) / 255
-        img_gripper = img_gripper.astype(np.float32) / 255
-        img_third_view = img_third_view.astype(np.float32) / 255
+        # img_gripper = img_gripper.astype(np.float32) / 255
+        # img_third_view = img_third_view.astype(np.float32) / 255
 
         obs_dict = {
             'wrist_img': img_wrist,
-            'gripper_img': img_gripper,
-            'third_view_img': img_third_view,
+            # 'gripper_img': img_gripper,
+            # 'third_view_img': img_third_view,
             'force': robot_force,
             'state': robot_state,
         }
@@ -274,34 +286,42 @@ class RealWorldEnv(gym.Env):
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()
 
+        if self.mode == 'eval':
+            # wait for setting up
+            print('Setup time, press any key when done')
+            input()
+            print('Setup complete')
+
         # self.previous_pose = self.ur5_controller.get_EE_transform()
         # with open('ur5_action_list.pkl', 'wb') as f:
         #     pickle.dump(self.ur5_action_list, f)
 
-        with open('force_list.pkl', 'wb') as f:
-            pickle.dump(self.force_list, f)
+        if self.mode =='eval':
+            with open(self.save_path, 'wb') as f:
+                pickle.dump(self.force_list, f)
 
         self.cur_step = 0
 
-        img_wrist, img_gripper, img_third_view = self.get_rgb()
+        # img_wrist, img_gripper, img_third_view = self.get_rgb()
+        img_wrist = self.get_rgb()
         robot_state = self.get_robot_state()
         robot_force = self.get_robot_force()
 
         if img_wrist.shape[0] != 3:
             img_wrist = img_wrist.transpose(2, 0, 1)
-        if img_gripper.shape[0] != 3:
-            img_gripper = img_gripper.transpose(2, 0, 1)
-        if img_third_view.shape[0] != 3:
-            img_third_view = img_third_view.transpose(2, 0, 1)
+        # if img_gripper.shape[0] != 3:
+        #     img_gripper = img_gripper.transpose(2, 0, 1)
+        # if img_third_view.shape[0] != 3:
+        #     img_third_view = img_third_view.transpose(2, 0, 1)
 
         img_wrist = img_wrist.astype(np.float32) / 255
-        img_gripper = img_gripper.astype(np.float32) / 255
-        img_third_view = img_third_view.astype(np.float32) / 255
+        # img_gripper = img_gripper.astype(np.float32) / 255
+        # img_third_view = img_third_view.astype(np.float32) / 255
 
         obs_dict = {
             'wrist_img': img_wrist,
-            'gripper_img': img_gripper,
-            'third_view_img': img_third_view,
+            # 'gripper_img': img_gripper,
+            # 'third_view_img': img_third_view,
             'force': robot_force,
             'state': robot_state,
         }

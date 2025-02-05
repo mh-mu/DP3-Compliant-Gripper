@@ -1100,6 +1100,9 @@ class DP3Realworld(BasePolicy):
             crop_shape=None,
             use_compliant_image=False,
             use_force=False,
+            # use_wrist_img=False,
+            # use_gripper_img=False,
+            # use_third_view_img=False,
             # parameters passed to step
             **kwargs):
         super().__init__()
@@ -1121,10 +1124,13 @@ class DP3Realworld(BasePolicy):
 
 
         obs_encoder = DP3RealworldEncoder(observation_space=obs_dict,
-                                                   img_crop_shape=crop_shape,
+                                                img_crop_shape=crop_shape,
                                                 out_channel=encoder_output_dim,
                                                 use_compliant_image=use_compliant_image,
                                                 use_force=use_force,
+                                                # use_wrist_img=use_wrist_img,
+                                                # use_gripper_img=use_gripper_img,
+                                                # use_third_view_img=use_third_view_img,
                                                 )
 
         # create diffusion model
@@ -1141,8 +1147,14 @@ class DP3Realworld(BasePolicy):
 
         self.use_compliant_image = use_compliant_image
         self.use_force = use_force
+        # self.use_wrist_img = use_wrist_img
+        # self.use_gripper_img = use_gripper_img
+        # self.use_third_view_img = use_third_view_img
         cprint(f"[DP3Realworld] use_compliant_image: {self.use_compliant_image}", "yellow")
         cprint(f"[DP3Realworld] use_force: {self.use_force}", "yellow")
+        # cprint(f"[DP3Realworld] use_wrist_img: {self.use_wrist_img}", "yellow")
+        # cprint(f"[DP3Realworld] use_gripper_img: {self.use_gripper_img}", "yellow")
+        # cprint(f"[DP3Realworld] use_third_view_img: {self.use_third_view_img}", "yellow")
 
 
 

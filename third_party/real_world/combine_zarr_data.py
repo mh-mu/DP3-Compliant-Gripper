@@ -55,9 +55,9 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
 
 if __name__ == "__main__":
     dataset_paths = [
-        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_multicam_new_actions_expert.zarr'
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_compliant_new_actions_expert.zarr'
     ]
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_compliant_multicam_10Hz_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_compliant_10Hz_expert.zarr'
 
     combine_multiple_zarr_datasets(dataset_paths, output_path)
 

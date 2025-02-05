@@ -13,13 +13,17 @@ def read_zarr_folder(folder_path):
         print(f"Error opening Zarr folder: {e}")
         return None
     
-folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_10Hz_expert.zarr"
+folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_compliant_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
     
 
 # Prompt the user to input a list of paths for the pickle files
-pickle_files = ['/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_compliant_withForce.pkl',
-                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list.pkl']
+pickle_files = ['/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_1.pkl',
+                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_2.pkl',
+                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_3.pkl',
+                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_6.pkl',
+                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_7.pkl',
+                '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_8.pkl',]
 
 # Initialize lists to store the forces
 all_x_forces = []
@@ -55,7 +59,7 @@ if zarr_data:
     segment_length = 150
 
     # Plot the 900-1050 points from zarr_forces
-    zarr_z_forces_segment = zarr_forces[450:600, 2]
+    zarr_z_forces_segment = zarr_forces[400:600, 2]
     plt.plot(zarr_z_forces_segment, label='Example Training Force', linestyle='--', color='green', alpha=0.7)
     
     # for start in range(0, num_points, segment_length):
@@ -65,12 +69,14 @@ if zarr_data:
     #     plt.plot(zarr_z_forces, linestyle='--', color='green', alpha=0.1)
 
 # Plot pickle file forces
+colors = ['blue', 'blue', 'blue', 'red', 'red', 'red']
+labels = ['with force', 'with force', 'with force', 'no force', 'no force', 'no force']
+
+# colors = ['blue', 'red']
+# labels = ['with force', 'no force']
+
 for i, z_forces in enumerate(all_z_forces):
-    # plt.plot(z_forces, label=f'Rollout Z Force {i+1}')
-    if i == 0:
-        plt.plot(z_forces, label='with force')
-    elif i == 1:
-        plt.plot(z_forces, label='no force')
+    plt.plot(z_forces, label=labels[i] if i % 1 == 0 else "", color=colors[i])
 
 plt.xlabel('Time Step')
 plt.ylabel('Force')

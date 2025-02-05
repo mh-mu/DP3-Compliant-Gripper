@@ -20,27 +20,28 @@ from diffusion_policy_3d.env.real_world import CONSTANTS
 import keyboard
 from icecream import ic 
 
+from rotation_transformer import RotationTransformer
 
-# Example usage of the klampt.model.trajectory library
+# # Example usage of the klampt.model.trajectory library
 
-# Create a trajectory with a list of milestones (waypoints)
-milestones = [
-    [0, 0, 0],
-    [1, 1, 1],
-    [2, 2, 2],
-    [3, 3, 3]
-]
+# # Create a trajectory with a list of milestones (waypoints)
+# milestones = [
+#     [0, 0, 0],
+#     [1, 1, 1],
+#     [2, 2, 2],
+#     [3, 3, 3]
+# ]
 
-# Create a Trajectory object
-traj = trajectory.Trajectory(milestones=milestones)
+# # Create a Trajectory object
+# traj = trajectory.Trajectory(milestones=milestones)
 
-# Print the trajectory
-print("Trajectory milestones:", traj.milestones)
+# # Print the trajectory
+# print("Trajectory milestones:", traj.milestones)
 
-# Evaluate the trajectory at a specific time
-time = 1.5
-point = traj.eval(time)
-print(f"Point at time {time}:", point)
+# # Evaluate the trajectory at a specific time
+# time = 1.5
+# point = traj.eval(time)
+# print(f"Point at time {time}:", point)
 
 # # Save the trajectory to a file
 # traj.save("trajectory.path")
@@ -49,3 +50,17 @@ print(f"Point at time {time}:", point)
 # loaded_traj = trajectory.Trajectory()
 # loaded_traj.load("trajectory.path")
 # print("Loaded trajectory milestones:", loaded_traj.milestones)
+
+# Create two rotation matrices using scipy.spatial.transform.Rotation
+rotation1 = Rotation.from_euler('xyz', [45, 45, 45], degrees=True).as_matrix()
+rotation2 = Rotation.from_euler('xyz', [90, 90, 90], degrees=True).as_matrix()
+
+# Flatten the rotation matrices to lists, column major form
+r1 = rotation1.T.flatten().tolist()
+r2 = rotation2.T.flatten().tolist()
+
+r1_vec = so3.rotation_vector(r1)
+
+rotation_transformer = RotationTransformer('axis_angle', 'rotation_6d')
+
+ic(r1_vec)
