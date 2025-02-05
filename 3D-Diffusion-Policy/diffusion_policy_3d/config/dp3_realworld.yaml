@@ -60,7 +60,7 @@ policy:
   shape_meta: ${shape_meta}
 
   use_compliant_image: False
-  use_force: False
+  use_force: True
   # use_wrist_img: False
   # use_gripper_img: True
   # use_third_view_img: False

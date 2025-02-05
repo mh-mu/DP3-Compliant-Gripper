@@ -12,10 +12,10 @@ shape_meta: &shape_meta
       shape: [3]
       type: low_dimx
     state:
-      shape: [13]
+      shape: [9]
       type: low_dimx
   action:
-    shape: [6]
+    shape: [9]
 
 env_runner: null
 
