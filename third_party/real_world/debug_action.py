@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from check_zarr_data import read_zarr_folder
 
 # Read the Zarr folder
-folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_10Hz_expert.zarr"
+folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
 if zarr_data:
     training_actions = zarr_data['data/action'][:]

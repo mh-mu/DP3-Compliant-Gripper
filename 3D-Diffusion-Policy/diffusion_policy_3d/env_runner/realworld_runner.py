@@ -78,9 +78,9 @@ class RealworldRunner(BaseRunner):
         self.obs_file_path = os.path.join(base_path, f'obs_dict_list_{file_index}.pkl')
 
         actions_file_index = 0
-        while os.path.exists(os.path.join(base_path, f'actions_list_{actions_file_index}.txt')):
+        while os.path.exists(os.path.join(base_path, f'predicted_action_list_{actions_file_index}.pkl')):
             actions_file_index += 1
-        self.actions_file_path = os.path.join(base_path, f'actions_list_{actions_file_index}.txt')
+        self.actions_file_path = os.path.join(base_path, f'predicted_action_list_{actions_file_index}.pkl')
 
     def run(self, policy: BasePolicy, save_video=True, use_force=False):
         device = policy.device
@@ -121,8 +121,9 @@ class RealworldRunner(BaseRunner):
                 np_action_dict = dict_apply(action_dict,
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
-                # ic()
-                # ic(action.shape)
+                ic()
+                ic(action.shape)
+                ic(action)
 
                 obs_dict_list.append({k: v.cpu().numpy() for k, v in obs_dict_input.items()})
                 
@@ -132,7 +133,6 @@ class RealworldRunner(BaseRunner):
                 if self.fps == 30:
                     obs, reward, done, info = env.step(action)
                 elif self.fps == 10:
-                    # ic(action.shape)
                     obs, reward, done, info = env.step_interpolate(action, interpolate_steps=2)
                     # ic(obs['state'].shape)
                 else:
@@ -140,9 +140,9 @@ class RealworldRunner(BaseRunner):
 
                 actions_list.append(action.tolist())
                 
-                with open(self.actions_file_path, 'w') as f:
-                    for action in actions_list:
-                        f.write("%s\n" % action)
+                with open(self.actions_file_path, 'wb') as f:
+                    ic('dumping predicted actions to ', self.actions_file_path)
+                    pickle.dump(actions_list, f)
 
                 # traj_reward += reward
                 done = np.all(done)

@@ -15,6 +15,7 @@ from gymnasium import spaces
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'UR5_IMPEDANCE')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'UR5_Teleop')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..', 'third_party', 'real_world')))
 
 from ur5_controller_wrapper import ur5ControlWrapper
 from vive_controller_teleop import *
@@ -24,6 +25,9 @@ from scipy.spatial.transform import Rotation
 from klampt.math import so3, se3
 from icecream import ic 
 import pickle
+
+from realworld_utils import rotation_6d_to_matrix
+
 
 class RealWorldEnv(gym.Env):
 
@@ -92,7 +96,7 @@ class RealWorldEnv(gym.Env):
             self.trans_scale = self.target_trans_speed / self.step_frequency
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
-        self.cap_wrist = cv2.VideoCapture(2)
+        self.cap_wrist = cv2.VideoCapture(1)
         # self.cap_gripper = cv2.VideoCapture(8)
         # self.cap_third_view = cv2.VideoCapture(5)
         ic('started cameras')
@@ -125,11 +129,21 @@ class RealWorldEnv(gym.Env):
 
     def get_robot_state(self):
         '''
-        13 elements, orientation(9) and ee position(3), fingers open or closed (1)
+        9 elements, orientation(6) and ee position(3)
         '''
         eef_pos = self.ur5_controller.get_EE_transform()
-        # finger_positions, _ = self.gripper.read_motor_positions() # TODO: change to scaled gripper value
-        return np.concatenate([np.array(eef_pos[0] + eef_pos[1]), np.array([self.gripper_state])])
+
+        if self.mode == 'train':
+            state = np.concatenate([np.array(eef_pos[0] + eef_pos[1]), np.array([self.gripper_state])])
+        if self.mode == 'eval':
+            rot = eef_pos[0]
+            trans = eef_pos[1]
+
+            rot_mat = np.array(rot).reshape(3, 3, order='F')
+            rot_6d = rot_mat[:2].flatten(order='C').tolist()
+            state = np.array(rot_6d + trans)
+
+        return state
 
     def get_rgb(self):
         ret_wrist, img_wrist = self.cap_wrist.read()
@@ -178,37 +192,34 @@ class RealWorldEnv(gym.Env):
     def step(self, action: np.array):
         start_time = time.time()
 
-        # perform actions
-        rot_vec = action[:3] # TODO: change action to interpret as 6d rotation
-        trans = action[3:6].tolist()
+        # record the previous action performed by the UR5 (for debugging)
+        current_pose = self.ur5_controller.get_EE_transform()
+        delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
+        self.ur5_action_list.append(delta_position)
+        with open('ur5_action_list.pkl', 'wb') as f:
+            pickle.dump(self.ur5_action_list, f)
+        self.previous_pose = current_pose
 
-        # cap rotation and translation actions
-        if np.any(np.abs(rot_vec) > 0.02) or np.any(np.abs(trans) > 0.005):
-            rot_vec = np.zeros_like(rot_vec)
-            trans = np.zeros_like(trans)
-        
-        rot = so3.from_rotation_vector(rot_vec)
+        if self.mode == 'train': # from collect_demo, action is [rot_vec(3), trans(3)]
+            rot_vec = action[:3]
+            trans = action[3:6].tolist()
 
-        # # record the previous action performed by the UR5 (for debugging)
-        # current_pose = self.ur5_controller.get_EE_transform()
-        # delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
-        # self.ur5_action_list.append(delta_position)
-        # with open('ur5_action_list.pkl', 'wb') as f:
-        #     pickle.dump(self.ur5_action_list, f)
-        # self.previous_pose = current_pose
-
-
-        if self.mode == 'train':
+            if np.any(np.abs(rot_vec) > 0.02) or np.any(np.abs(trans) > 0.005):
+                rot_vec = np.zeros_like(rot_vec)
+                trans = np.zeros_like(trans)
+            
+            rot = so3.from_rotation_vector(rot_vec)
             self.ur5_controller.set_EE_transform_delta((rot, trans))
-        elif self.mode == 'eval':
-            # print('The predicted action is:', rot_vec, trans)
-            # print('Execute action? (y/n)')
-            # if input() == 'y':
-            #     self.ur5_controller.set_EE_transform_delta((rot, trans))
-            # else:
-            #     print('Action not executed. Exiting...')
-            #     exit()
-            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.2, max_rot_v=0.1)
+
+        elif self.mode == 'eval': # from model prediction action is [rot_6d(6), trans(3)]
+            rot_6d = action[:6]
+            trans = action[6:].tolist()
+
+            rot_mat = rotation_6d_to_matrix(rot_6d)
+            rot_mat = np.eye(3)
+            rot = so3.from_matrix(rot_mat)
+
+            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.02, max_rot_v=0.05)
         
         # gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: 
@@ -292,9 +303,9 @@ class RealWorldEnv(gym.Env):
             input()
             print('Setup complete')
 
-        # self.previous_pose = self.ur5_controller.get_EE_transform()
-        # with open('ur5_action_list.pkl', 'wb') as f:
-        #     pickle.dump(self.ur5_action_list, f)
+        self.previous_pose = self.ur5_controller.get_EE_transform()
+        with open('ur5_action_list.pkl', 'wb') as f:
+            pickle.dump(self.ur5_action_list, f)
 
         if self.mode =='eval':
             with open(self.save_path, 'wb') as f:

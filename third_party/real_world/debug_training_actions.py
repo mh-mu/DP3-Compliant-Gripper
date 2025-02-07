@@ -24,14 +24,14 @@ t = [-0.5719669638367115, -0.13510426694812794, 0.00818264088493828]
 UR5_home_position = (R, t)
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_compliant_10Hz_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        actions = zarr_data['data/action'][:1200]
-        images = zarr_data['data/wrist_img'][:1200]
+        actions = zarr_data['data/action'][:400]
+        images = zarr_data['data/wrist_img'][:400]
 
         # get trans actions
-        trans_actions = actions[:, 3:6]
+        trans_actions = actions[:, 6:9]
 
         # Create a video writer
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
