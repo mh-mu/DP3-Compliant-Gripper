@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print("Contents of the Zarr group:")
@@ -130,6 +130,6 @@ if __name__ == "__main__":
 
     # rewrite episode end
     combined_dataset = zarr.open(folder_path, mode='r+')
-    total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
+    # total_num_step = combined_dataset['data/action'].shape[0]
+    # combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
     print(combined_dataset['meta/episode_ends'][:])

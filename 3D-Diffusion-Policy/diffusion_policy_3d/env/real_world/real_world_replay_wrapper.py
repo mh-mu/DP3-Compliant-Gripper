@@ -24,7 +24,7 @@ class RealWorldReplayEnv(gym.Env):
                  ):
         super(RealWorldReplayEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 300
+        self.episode_length = self._max_episode_steps = 200
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -64,21 +64,22 @@ class RealWorldReplayEnv(gym.Env):
                 print(f"Error opening Zarr folder: {e}")
                 return None
             
-        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_line_10Hz_expert.zarr"
+        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
         self.zarr_data = read_zarr_folder(folder_path)
         self.cur_step = 0
+        self.current_episode = -1
 
     def get_robot_state(self):
         '''
-        13 elements, orientation(9) and ee position(3), fingers open or closed (1)
+        9 elements, orientation(6) and ee position(3)
         '''
-        return self.zarr_data['data/state'][self.cur_step]
+        return self.zarr_data['data/state'][self.current_episode * self.episode_length + self.cur_step]
 
     def get_rgb(self):
-        return self.zarr_data['data/wrist_img'][self.cur_step]
+        return self.zarr_data['data/wrist_img'][self.current_episode * self.episode_length + self.cur_step]
     
     def get_robot_force(self):
-        return self.zarr_data['data/force'][self.cur_step]
+        return self.zarr_data['data/force'][self.current_episode * self.episode_length + self.cur_step]
 
     def get_visual_obs(self):
         obs_pixels = self.get_rgb()
@@ -125,6 +126,10 @@ class RealWorldReplayEnv(gym.Env):
     def reset(self, seed = None, options = None):
 
         self.cur_step = 0
+        self.current_episode += 1
+
+        if self.current_episode >= 2:
+            quit()
 
         obs_pixels = self.get_rgb()
         robot_state = self.get_robot_state()

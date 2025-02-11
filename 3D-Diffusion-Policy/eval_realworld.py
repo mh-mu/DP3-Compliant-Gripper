@@ -35,8 +35,8 @@ def main(cfg: DictConfig):
     env_runner = RealworldRunner(output_dir='./',
                                 eval_episodes=10,
                                 max_steps=300,
-                                # fps=30, # 30Hz
-                                fps=10, # 10Hz
+                                fps=30, # 30Hz
+                                # fps=10, # 10Hz
                                 n_obs_steps=2,
                                 n_action_steps=4,)
     # assert isinstance(env_runner, BaseRunner) # TODO: why not instance

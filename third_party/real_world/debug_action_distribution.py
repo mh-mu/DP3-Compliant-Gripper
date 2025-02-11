@@ -3,6 +3,10 @@ import ast
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from check_zarr_data import read_zarr_folder
+import pickle
+from icecream import ic
+
+data_index = 1
 
 # Read the Zarr folder
 folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
@@ -19,15 +23,9 @@ else:
 # else:
 #     raise Exception("Error reading Zarr data")
 
-# Initialize an empty list to store the actions
-actions_list = []
-
 # Load the nested lists from actions_list.txt
-with open('rollout_data/actions_list_6.txt', 'r') as file:
-    for line in file:
-        # Parse each line as a separate list and append to actions_list
-        actions_list.append(ast.literal_eval(line.strip()))
-
+with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
+    actions_list = pickle.load(file)
 # Convert the nested list into a numpy array
 actions_array = np.array(actions_list)
 
@@ -42,11 +40,10 @@ for i in range(actions_array.shape[2]):
     print(f"Slice {i} - Min: {slice_min}, Max: {slice_max}")
 
 # Consider only the first 6 dimensions out of the 7 dimensions
-actions_array_6d = actions_array[:, :, 3:6]
-# actions_array_6d = actions_array[:, :, :3]
-predicted_actions_6d = actions_array_6d.reshape(-1, actions_array_6d.shape[2])
-training_actions_6d = training_actions[:, 3:6]
-# training_actions_6d = training_actions[:, :3]
+predicted_actions_6d = actions_array[:, :, 6:9]
+predicted_actions_6d = predicted_actions_6d.reshape(-1, predicted_actions_6d.shape[2])
+ic(predicted_actions_6d.shape)
+training_actions_6d = training_actions[:, 6:9]
 
 # training_actions_3d = training_actions[:, 3:6]
 # training_actions2_3d = training_actions2[:, 3:6]

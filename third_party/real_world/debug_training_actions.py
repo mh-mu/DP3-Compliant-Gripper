@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from realworld_utils import *
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'UR5_IMPEDANCE')))
@@ -27,15 +28,16 @@ if __name__ == "__main__":
     folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        actions = zarr_data['data/action'][:400]
-        images = zarr_data['data/wrist_img'][:400]
+        actions = zarr_data['data/action'][:200]
+        images = zarr_data['data/wrist_img'][:200]
 
         # get trans actions
         trans_actions = actions[:, 6:9]
+        # trans_actions = actions[:, 3:6]
 
         # Create a video writer
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('debug_training_action.avi', fourcc, 10.0, (1280, 480))
+        out = cv2.VideoWriter('debug_training_action_peg_rigid.avi', fourcc, 10.0, (1280, 480))
 
         # Determine the bounds for the action plot
         x_min, x_max = np.min(trans_actions[:, 0]) / 5, np.max(trans_actions[:, 0]) / 2
@@ -95,9 +97,10 @@ if __name__ == "__main__":
         # time.sleep(1)
 
         # for action in tqdm(actions):
-        #     rot_vec = action[:3]
-        #     rot = so3.from_rotation_vector(rot_vec)
-        #     trans = action[3:6].tolist()
+        #     rot_6d = action[:6]
+        #     rot_mat = rotation_6d_to_matrix(rot_6d)
+        #     rot = so3.from_matrix(rot_mat)
+        #     trans = action[6:9].tolist()
 
         #     ur5_controller.set_EE_transform_delta((rot, trans))
         #     time.sleep(0.1)

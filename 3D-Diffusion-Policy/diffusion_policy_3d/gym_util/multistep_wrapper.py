@@ -4,7 +4,31 @@ import numpy as np
 import torch
 from collections import defaultdict, deque
 import dill
+from klampt.model import trajectory
+from klampt.math import so3
 
+def rotation_6d_to_matrix(d6: np.ndarray) -> np.ndarray:
+    """
+    Converts 6D rotation representation by Zhou et al. [1] to rotation matrix
+    using Gram--Schmidt orthogonalization per Section B of [1].
+    Args:
+        d6: 6D rotation representation, of size (6,)
+
+    Returns:
+        rotation matrix of size (3, 3)
+
+    [1] Zhou, Y., Barnes, C., Lu, J., Yang, J., & Li, H.
+    On the Continuity of Rotation Representations in Neural Networks.
+    IEEE Conference on Computer Vision and Pattern Recognition, 2019.
+    Retrieved from http://arxiv.org/abs/1812.07035
+    """
+
+    a1, a2 = d6[:3], d6[3:]
+    b1 = a1 / np.linalg.norm(a1)
+    b2 = a2 - np.dot(b1, a2) * b1
+    b2 = b2 / np.linalg.norm(b2)
+    b3 = np.cross(b1, b2)
+    return np.stack((b1, b2, b3), axis=-1)
 
 def stack_repeated(x, n):
     return np.repeat(np.expand_dims(x,axis=0),n,axis=0)
@@ -166,20 +190,33 @@ class MultiStepWrapper(gym.Wrapper):
         Interpolates between actions with user specified number of steps using linear interpolation
         actions: (n_action_steps,) + action_shape
         """
+        
         interpolated_actions = []
+        print('shape of actions', action.shape)
+
         for i in range(len(action) - 1):
-            rot1, trans1 = action[i][:3], action[i][3:6]
-            rot2, trans2 = action[i + 1][:3], action[i + 1][3:6]
+            rot1, trans1 = action[i][:6], action[i][6:]
+            rot2, trans2 = action[i + 1][:6], action[i + 1][6:]
+
+            rot1_matrix = rotation_6d_to_matrix(rot1)
+            rot2_matrix = rotation_6d_to_matrix(rot2)
+            R1 = so3.from_matrix(rot1_matrix)
+            R2 = so3.from_matrix(rot2_matrix)
+            T1 = [R1, trans1.tolist()]
+            T2 = [R2, trans2.tolist()]
+
+            traj = trajectory.SE3Trajectory(times=[0, interpolate_steps+1], milestones=[T1, T2])
+            
             for j in range(interpolate_steps + 1):
-                alpha = j / (interpolate_steps + 1)
-                interpolated_rot = (1 - alpha) * rot1 + alpha * rot2
-                interpolated_trans = (1 - alpha) * trans1 + alpha * trans2
-                interpolated_action = np.concatenate((interpolated_rot, interpolated_trans, [1]))
-                interpolated_actions.append(interpolated_action)
+                T = traj.eval(j)
+                rot_6d = np.array(T[0]).reshape(3, 3, order='F')[:2].flatten().tolist()
+                trans = T[1]
+                interpolated_actions.append(np.concatenate((rot_6d, trans)))
+        
         interpolated_actions.append(action[-1])
+
         action = interpolated_actions
-        # print('Interpolated action:', action)
-        # quit()
+        print('len of interpolated actions', len(action))
 
         for act in action:
             if len(self.done) > 0 and self.done[-1]:

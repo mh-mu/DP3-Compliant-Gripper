@@ -84,3 +84,45 @@ from tqdm import tqdm
 # rotation_diff = rotation_diff_matrices.reshape(-1, 6)
 # ic(rotation_diff)
 
+from klampt.model import trajectory
+
+# Create two random rotation matrices using scipy.spatial.transform.Rotation
+rotation1 = Rotation.random().as_matrix()
+rotation2 = Rotation.random().as_matrix()
+
+# Print the rotation matrices
+print("Rotation matrix 1:\n", rotation1)
+print("Rotation matrix 2:\n", rotation2)
+
+# Flatten the rotation matrices to lists, column major form
+r1 = rotation1.T.flatten().tolist()
+r2 = rotation2.T.flatten().tolist()
+
+# Print the flattened rotation matrices
+print("Flattened rotation matrix 1:", r1)
+print("Flattened rotation matrix 2:", r2)
+
+# Create two random translation vectors
+translation1 = np.random.rand(3)
+translation2 = np.random.rand(3)
+
+# Print the translation vectors
+print("Translation vector 1:", translation1)
+print("Translation vector 2:", translation2)
+
+# Combine the rotation list and the translation list into a single list of two, with the rotation list first
+combined1 = [r1, translation1.tolist()]
+combined2 = [r2, translation2.tolist()]
+
+# Print the combined lists
+print("Combined list 1:", combined1)
+print("Combined list 2:", combined2)
+
+traj = trajectory.SE3Trajectory(times=[0, 2], milestones=[combined1, combined2])
+ic(traj.eval(0))
+ic(traj.eval(1))
+ic(traj.eval(2))
+
+# ic(combined1)
+# rot_6d = np.array(combined1[0]).reshape(3, 3, order='F')[:2].flatten().tolist()
+# ic(rot_6d)

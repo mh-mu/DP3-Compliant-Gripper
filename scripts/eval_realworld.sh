@@ -4,7 +4,7 @@ cd 3D-Diffusion-Policy
 v4l2-ctl -d /dev/video1 --set-ctrl=focus_automatic_continuous=0
 v4l2-ctl -d /dev/video1 --set-ctrl=focus_absolute=20
 v4l2-ctl -d /dev/video1 --set-ctrl=auto_exposure=1
-v4l2-ctl -d /dev/video1 --set-ctrl=exposure_time_absolute=100
+v4l2-ctl -d /dev/video1 --set-ctrl=exposure_time_absolute=80
 v4l2-ctl -d /dev/video1 --set-ctrl=white_balance_automatic=0
 v4l2-ctl -d /dev/video1 --set-ctrl=white_balance_temperature=3000
 v4l2-ctl -d /dev/video1 --set-ctrl=brightness=128
@@ -28,7 +28,7 @@ v4l2-ctl -d /dev/video1 --set-ctrl=brightness=128
 # v4l2-ctl -d /dev/video5 --set-ctrl=brightness=128
 
 # Display webcam image using ffplay
-# ffplay /dev/video0
+# ffplay /dev/video1
 
 export HYDRA_FULL_ERROR=1
 
