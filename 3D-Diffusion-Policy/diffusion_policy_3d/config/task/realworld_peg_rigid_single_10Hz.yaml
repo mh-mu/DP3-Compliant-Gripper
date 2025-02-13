@@ -1,0 +1,30 @@
+name: realworld_peg_rigid_single_10Hz
+
+task_name: contact
+
+shape_meta: &shape_meta
+  # acceptable types: rgb, low_dim
+  obs:
+    wrist_img:
+      shape: [480, 640, 3]
+      type: rgb
+    force:
+      shape: [3]
+      type: low_dimx
+    state:
+      shape: [9]
+      type: low_dimx
+  action:
+    shape: [9]
+
+env_runner: null
+
+dataset:
+  _target_: diffusion_policy_3d.dataset.realworld_dataset.RealWorldDataset
+  zarr_path: data/real-world_peg_rigid_single_10Hz_expert.zarr
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.02
+  max_train_episodes: 90

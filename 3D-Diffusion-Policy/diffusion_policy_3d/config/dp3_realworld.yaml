@@ -60,7 +60,7 @@ policy:
   shape_meta: ${shape_meta}
 
   use_compliant_image: False
-  use_force: True`
+  use_force: True
   # use_wrist_img: False
   # use_gripper_img: True
   # use_third_view_img: False
@@ -103,7 +103,7 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 201
+  num_epochs: 601
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200

@@ -593,26 +593,40 @@ class DP3RealworldEncoder(nn.Module):
         cprint(f"[DP3RealworldEncoder] force shape: {self.force_shape}", "yellow")
         cprint(f"[DP3RealworldEncoder] state shape: {self.state_shape}", "yellow")
 
-        self.rgb_model = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
-                nn.Flatten(),
-                nn.Linear(64, 128),
-                nn.ReLU(),
-                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
-            )
-        rgb_params = sum(p.numel() for p in self.rgb_model.parameters())
-        print(f"The rgb encoder has {rgb_params} parameters.")
+        # self.rgb_model = nn.Sequential(
+        #     nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+        #     nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+        #     nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+        #     nn.ReLU(),
+        #     nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+        #     nn.Flatten(),
+        #     nn.Linear(64, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+        #     )
+        
+        # rgb_params = sum(p.numel() for p in self.rgb_model.parameters())
+        # print(f"The rgb encoder has {rgb_params} parameters.")
+
+        self.rgb_resnet_model = resnet18(weights='DEFAULT')
+        num_features = self.rgb_resnet_model.fc.in_features
+        self.rgb_resnet_model.fc = nn.Sequential(
+            nn.Linear(num_features, 128),
+            nn.ReLU(),
+            nn.Linear(128, self.n_output_channels)
+        )
+
+        # rgb_resnet_params = sum(p.numel() for p in self.rgb_resnet_model.parameters())
+        # print(f"The rgb resnet encoder has {rgb_resnet_params} parameters.")
+        # quit()
+
 
         # if self.use_compliant_image:
         #     # model for compliant image
@@ -653,9 +667,8 @@ class DP3RealworldEncoder(nn.Module):
         else:
             self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0], output_dim, net_arch, state_mlp_activation_fn))
 
-        obs_params = sum(p.numel() for p in self.state_mlp.parameters())
-        print(f"The obs encoder has {obs_params} parameters.")
-        quit()
+        # obs_params = sum(p.numel() for p in self.state_mlp.parameters())
+        # print(f"The obs encoder has {obs_params} parameters.")
 
         cprint(f"[DP3RealworldEncoder] output dim: {self.n_output_channels}", "red")
 
@@ -664,7 +677,8 @@ class DP3RealworldEncoder(nn.Module):
         rgb_img = observations[self.rgb_image_key].float()
         assert len(rgb_img.shape) == 4, cprint(f"combined image shape: {rgb_img.shape}, length should be 4", "red")
         
-        img_feat = self.rgb_model(rgb_img) # B * out_channel
+        # img_feat = self.rgb_model(rgb_img) # B * out_channel
+        img_feat = self.rgb_resnet_model(rgb_img) # B * out_channel
             
         state = observations[self.state_key]
         if self.use_force:

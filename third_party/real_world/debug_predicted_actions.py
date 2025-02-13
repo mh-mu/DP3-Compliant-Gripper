@@ -8,7 +8,7 @@ from tqdm import tqdm
 from check_zarr_data import read_zarr_folder
 
 
-data_index = 12
+data_index = 14
 
 # Load the pickle file
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:
@@ -40,10 +40,9 @@ if zarr_data:
 else:
     raise Exception("Error reading Zarr data")
 
-
 # Create a VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter(f'rollout_data/output_{data_index}.avi', fourcc, 5.0, (640*3, 480))
+fourcc = cv2.VideoWriter_fourcc(*'VP80')
+out = cv2.VideoWriter(f'rollout_data/output_{data_index}.webm', fourcc, 5.0, (640*3, 480))
 
 
 # Iterate through the data and actions_array
