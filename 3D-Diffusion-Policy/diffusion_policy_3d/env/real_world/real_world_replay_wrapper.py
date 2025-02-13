@@ -128,7 +128,7 @@ class RealWorldReplayEnv(gym.Env):
         self.cur_step = 0
         self.current_episode += 1
 
-        if self.current_episode >= 2:
+        if self.current_episode >= 1:
             quit()
 
         obs_pixels = self.get_rgb()

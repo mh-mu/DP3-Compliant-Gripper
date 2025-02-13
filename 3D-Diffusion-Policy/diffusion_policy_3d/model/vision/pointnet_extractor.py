@@ -594,23 +594,25 @@ class DP3RealworldEncoder(nn.Module):
         cprint(f"[DP3RealworldEncoder] state shape: {self.state_shape}", "yellow")
 
         self.rgb_model = nn.Sequential(
-                    nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
-                    nn.ReLU(),
-                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                    nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
-                    nn.ReLU(),
-                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                    nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
-                    nn.ReLU(),
-                    nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
-                    nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
-                    nn.ReLU(),
-                    nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
-                    nn.Flatten(),
-                    nn.Linear(64, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
-                )
+                nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling to reduce the spatial dimensions
+                nn.Flatten(),
+                nn.Linear(64, 128),
+                nn.ReLU(),
+                nn.Linear(128, self.n_output_channels)  # Output vector of size n_output_channels
+            )
+        rgb_params = sum(p.numel() for p in self.rgb_model.parameters())
+        print(f"The rgb encoder has {rgb_params} parameters.")
 
         # if self.use_compliant_image:
         #     # model for compliant image
@@ -650,6 +652,10 @@ class DP3RealworldEncoder(nn.Module):
             self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0] + self.force_shape[0], output_dim, net_arch, state_mlp_activation_fn))
         else:
             self.state_mlp = nn.Sequential(*create_mlp(self.state_shape[0], output_dim, net_arch, state_mlp_activation_fn))
+
+        obs_params = sum(p.numel() for p in self.state_mlp.parameters())
+        print(f"The obs encoder has {obs_params} parameters.")
+        quit()
 
         cprint(f"[DP3RealworldEncoder] output dim: {self.n_output_channels}", "red")
 

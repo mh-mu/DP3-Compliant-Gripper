@@ -98,6 +98,7 @@ class RealworldRunner(BaseRunner):
             # start rollout
             obs = env.reset()
             policy.reset()
+            action_index = 0
 
             done = False
             traj_reward = 0
@@ -115,11 +116,12 @@ class RealworldRunner(BaseRunner):
                     if use_force:
                         obs_dict_input['force'] = obs_dict['force'].unsqueeze(0)
                     action_dict = policy.predict_action(obs_dict_input)
-                    ic('action predicted')
 
                 np_action_dict = dict_apply(action_dict,
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
+                action_index += 1
+                ic(action_index)
 
                 obs_dict_list.append({k: v.cpu().numpy() for k, v in obs_dict_input.items()})
                 
@@ -136,7 +138,6 @@ class RealworldRunner(BaseRunner):
                 actions_list.append(action.tolist())
                 
                 with open(self.actions_file_path, 'wb') as f:
-                    ic('dumping predicted actions to ', self.actions_file_path)
                     pickle.dump(actions_list, f)
 
                 # traj_reward += reward

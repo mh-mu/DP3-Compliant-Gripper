@@ -1,4 +1,5 @@
 from termcolor import cprint
+from icecream import ic
 
 def print_params(model):
     """
