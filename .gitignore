@@ -47,8 +47,12 @@ output/
 
 compliant_force_output.txt
 
+third_party/real_world/rollout_data/
+sbatch/
+
 *.avi
 *.jpg
 *.png
 *.txt
 *.pkl
+*.webm
