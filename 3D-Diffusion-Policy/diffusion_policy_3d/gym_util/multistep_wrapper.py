@@ -192,7 +192,6 @@ class MultiStepWrapper(gym.Wrapper):
         """
         
         interpolated_actions = []
-        print('shape of actions', action.shape)
 
         for i in range(len(action) - 1):
             rot1, trans1 = action[i][:6], action[i][6:]
@@ -216,7 +215,6 @@ class MultiStepWrapper(gym.Wrapper):
         interpolated_actions.append(action[-1])
 
         action = interpolated_actions
-        print('len of interpolated actions', len(action))
 
         for act in action:
             if len(self.done) > 0 and self.done[-1]:

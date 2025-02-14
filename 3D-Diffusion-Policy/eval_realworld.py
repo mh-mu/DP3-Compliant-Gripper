@@ -26,7 +26,7 @@ def main(cfg: DictConfig):
     workspace = TrainDP3Workspace(cfg=cfg)
 
     # best_ckpt_path = workspace.get_checkpoint_path(tag="best")
-    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_peg_rigid_single_10Hz-dp3_realworld-0002_seed0/checkpoints'
+    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_peg_rigid_10Hz-dp3_realworld-0005_seed0/checkpoints'
     best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("latest.ckpt")
     if best_ckpt_path.is_file():
         print(f"Resuming from checkpoint {best_ckpt_path}")
@@ -35,8 +35,8 @@ def main(cfg: DictConfig):
     env_runner = RealworldRunner(output_dir='./',
                                 eval_episodes=10,
                                 max_steps=300,
-                                fps=30, # 30Hz
-                                # fps=10, # 10Hz
+                                # fps=30, # 30Hz
+                                fps=10, # 10Hz
                                 n_obs_steps=2,
                                 n_action_steps=4,)
     # assert isinstance(env_runner, BaseRunner) # TODO: why not instance

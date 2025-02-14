@@ -46,9 +46,9 @@ class RealworldRunner(BaseRunner):
         def env_fn(task_name):
             return MultiStepWrapper(
                 SimpleVideoRecordingWrapper(
-                    # RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
+                    RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
                     # RealWorldEnv(task_name=task_name, finger_type='compliant', device=device, demo_device='vr', mode='eval')),
-                    RealWorldReplayEnv(task_name=task_name, device=device, mode='eval')), # for testing training data
+                    # RealWorldReplayEnv(task_name=task_name, device=device, mode='eval')), # for testing training data
                 n_obs_steps=n_obs_steps,
                 n_action_steps=n_action_steps,
                 max_episode_steps=max_steps,
@@ -121,7 +121,7 @@ class RealworldRunner(BaseRunner):
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
                 action_index += 1
-                ic(action_index)
+                # ic(action_index)
 
                 obs_dict_list.append({k: v.cpu().numpy() for k, v in obs_dict_input.items()})
                 

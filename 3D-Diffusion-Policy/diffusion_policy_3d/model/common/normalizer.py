@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from diffusion_policy_3d.common.pytorch_util import dict_apply
 from diffusion_policy_3d.model.common.dict_of_tensor_mixin import DictOfTensorMixin
-
+from icecream import ic
 
 class LinearNormalizer(DictOfTensorMixin):
     avaliable_modes = ['limits', 'gaussian']

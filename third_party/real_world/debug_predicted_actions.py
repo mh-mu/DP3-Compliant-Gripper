@@ -8,31 +8,19 @@ from tqdm import tqdm
 from check_zarr_data import read_zarr_folder
 
 
-data_index = 14
+data_index = 21
 
-# Load the pickle file
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:
     data = pickle.load(file)
 
-# Print the number of items in the pickle file
 print(f"Number of items in the pickle file: {len(data)}")
 
-# Initialize an empty list to store the actions
 actions_list = []
-
-# Load the nested lists from actions_list.txt
 with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
     actions_list = pickle.load(file)
-
-# Convert the nested list into a numpy array
 actions_array = np.array(actions_list)
 
-# ic(actions_array.shape)
-# ic(len(data))
-# ic(data[0]['wrist_img'].shape)
-# quit()
 
-# Read the Zarr folder
 folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
 if zarr_data:
@@ -40,20 +28,15 @@ if zarr_data:
 else:
     raise Exception("Error reading Zarr data")
 
-# Create a VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'VP80')
 out = cv2.VideoWriter(f'rollout_data/output_{data_index}.webm', fourcc, 5.0, (640*3, 480))
 
 
-# Iterate through the data and actions_array
 for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
-    # Get the wrist image
     wrist_img = item['wrist_img']
     
-    # Create a blank image for the 3D plot
     plot_img = np.zeros((480, 640, 3), dtype=np.uint8)
     
-    # Create a 3D plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     

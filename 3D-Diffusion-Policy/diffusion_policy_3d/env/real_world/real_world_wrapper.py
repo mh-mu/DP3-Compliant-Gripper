@@ -96,7 +96,7 @@ class RealWorldEnv(gym.Env):
             self.trans_scale = self.target_trans_speed / self.step_frequency
             self.rot_scale = self.target_rot_speed / self.step_frequency
 
-        self.cap_wrist = cv2.VideoCapture(1)
+        self.cap_wrist = cv2.VideoCapture(2)
         # self.cap_gripper = cv2.VideoCapture(8)
         # self.cap_third_view = cv2.VideoCapture(5)
         ic('started cameras')
@@ -219,7 +219,10 @@ class RealWorldEnv(gym.Env):
             rot_mat = np.eye(3)
             rot = so3.from_matrix(rot_mat)
 
-            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.02, max_rot_v=0.05)
+            # self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.02, max_rot_v=0.05)
+            ic()
+            ic(trans)
+            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.1, max_rot_v=0.1)
         
         # gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: 
