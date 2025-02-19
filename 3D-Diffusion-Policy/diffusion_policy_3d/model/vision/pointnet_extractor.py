@@ -8,7 +8,7 @@ from icecream import ic
 from typing import Optional, Dict, Tuple, Union, List, Type
 from termcolor import cprint
 
-from torchvision.models import resnet18
+from torchvision.models import resnet18, resnet34
 
 from diffusion_policy_3d.common.model_util import print_params
 
@@ -615,7 +615,9 @@ class DP3RealworldEncoder(nn.Module):
         # rgb_params = sum(p.numel() for p in self.rgb_model.parameters())
         # print(f"The rgb encoder has {rgb_params} parameters.")
 
-        self.rgb_resnet_model = resnet18(weights='DEFAULT')
+        # self.rgb_resnet_model = resnet18(weights='DEFAULT')
+        self.rgb_resnet_model = resnet18(weights=None)
+        # self.rgb_resnet_model = resnet34(weights=None)
         num_features = self.rgb_resnet_model.fc.in_features
         self.rgb_resnet_model.fc = nn.Sequential(
             nn.Linear(num_features, 128),
