@@ -105,9 +105,9 @@ training:
   seed: 42
   debug: False
   resume: True
-  lr_scheduler: cosine
+  # lr_scheduler: cosine
   # lr_scheduler: polynomial
-  # lr_scheduler: cosine_with_restarts
+  lr_scheduler: cosine_with_restarts
   lr_warmup_steps: 500
   num_epochs: 601
   gradient_accumulate_every: 1
