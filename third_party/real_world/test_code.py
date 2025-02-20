@@ -132,25 +132,44 @@ import torch
 # # ic(rot_6d)
 
 
-import torch.nn.functional as F
-from einops import rearrange, reduce
-# Create two random matrices in tensor of shape (16, 4, 9)
-pred = np.arange(36, dtype=np.float32).reshape(4, 9)
-target = np.arange(36, 72, dtype=np.float32).reshape(4, 9)
-pred = np.tile(pred, (16, 1, 1))
-target = np.tile(target, (16, 1, 1))
+# import torch.nn.functional as F
+# from einops import rearrange, reduce
+# # Create two random matrices in tensor of shape (16, 4, 9)
+# pred = np.arange(36, dtype=np.float32).reshape(4, 9)
+# target = np.arange(36, 72, dtype=np.float32).reshape(4, 9)
+# pred = np.tile(pred, (16, 1, 1))
+# target = np.tile(target, (16, 1, 1))
 
-# Convert the numpy arrays to torch tensors
-pred = torch.tensor(pred)
-target = torch.tensor(target)
+# # Convert the numpy arrays to torch tensors
+# pred = torch.tensor(pred)
+# target = torch.tensor(target)
 
-# Print the torch tensors
-print("Torch Tensor 1:\n", pred)
-print("Torch Tensor 2:\n", target)
+# # Print the torch tensors
+# print("Torch Tensor 1:\n", pred)
+# print("Torch Tensor 2:\n", target)
 
-loss = F.mse_loss(pred, target, reduction='none')
-ic(loss)
-loss = reduce(loss, 'b ... -> b (...)', 'mean')
-ic(loss)
-loss = loss.mean()
-ic(loss)
+# loss = F.mse_loss(pred, target, reduction='none')
+# ic(loss)
+# loss = reduce(loss, 'b ... -> b (...)', 'mean')
+# ic(loss)
+# loss = loss.mean()
+# ic(loss)
+
+
+# Create an array of shape (20, 3)
+data = np.random.rand(20, 3)
+
+# Store the array in a zarr file
+zarr_file = 'data.zarr'
+z = zarr.open(zarr_file, mode='w', shape=data.shape, dtype=data.dtype)
+z[:] = data
+
+# Print the original zarr array
+print("Original zarr array:\n", z[:])
+
+# Resize the zarr array to contain only the last 1 of the 20 items
+z.resize(1, 3)
+z[:] = z[-1:]
+
+# Print the resized zarr array
+print("Resized zarr array:\n", z[:])

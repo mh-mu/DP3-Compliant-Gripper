@@ -21,7 +21,7 @@ with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
 actions_array = np.array(actions_list)
 
 
-folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
+folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_eval_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
 if zarr_data:
     training_actions = zarr_data['data/action'][:200]
@@ -31,6 +31,8 @@ else:
 fourcc = cv2.VideoWriter_fourcc(*'VP80')
 out = cv2.VideoWriter(f'rollout_data/output_{data_index}.webm', fourcc, 5.0, (640*3, 480))
 
+
+all_percentage_diffs = []
 
 for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
     wrist_img = item['wrist_img']
@@ -57,6 +59,7 @@ for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
             gt = training_actions[training_index + j, 6:9]
             diff = np.abs(pred - gt) / np.abs(gt) * 100
             percentage_diffs.append(diff)
+    all_percentage_diffs.extend(percentage_diffs)
     
     # Add text on top of the plot
     pred_text_str = "\n".join([f"Pred: ({row[6]:.8f}, {row[7]:.8f}, {row[8]:.8f})" for row in action_block])
@@ -102,3 +105,11 @@ for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
 
 # Release the VideoWriter object
 out.release()
+
+# Save all percentage differences to a file
+with open(f'rollout_data/percentage_diffs_{data_index}.pkl', 'wb') as file:
+    pickle.dump(all_percentage_diffs, file)
+
+# Calculate and display the average percentage difference
+average_diff = np.mean(all_percentage_diffs, axis=0)
+print(f"Average percentage difference: {average_diff}")

@@ -38,7 +38,7 @@ def main(cfg: DictConfig):
                                 # fps=30, # 30Hz
                                 fps=10, # 10Hz
                                 n_obs_steps=2,
-                                n_action_steps=4,)
+                                n_action_steps=4,) # TODO: check if action steps is correct
     # assert isinstance(env_runner, BaseRunner) # TODO: why not instance
 
     policy = workspace.model

@@ -358,18 +358,18 @@ class ConditionalUnet1D(nn.Module):
         for mid_module in self.mid_modules:
             if self.use_mid_condition:
                 x = mid_module(x, global_feature)
-                # ic()
-                # print('mid modules')
-                # ic(x.shape)
+                ic()
+                print('mid modules')
+                ic(x.shape)
             else:
                 x = mid_module(x)
 
-        # ic([item.shape for item in h])
+        ic([item.shape for item in h])
 
         for idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
-            # ic(x.shape)
+            ic(x.shape)
             popped_h = h.pop()
-            # ic(popped_h.shape)
+            ic(popped_h.shape)
             x = torch.cat((x, popped_h), dim=1)
             # ic()
             # ic(x.shape)
