@@ -12,7 +12,7 @@ exp_name: "debug"
 # n_obs_steps: 2
 # n_action_steps: 4
 # n_latency_steps: 0
-horizon: 10
+horizon: 16
 n_obs_steps: 2
 n_action_steps: 8
 n_latency_steps: 0

@@ -220,9 +220,10 @@ class RealWorldEnv(gym.Env):
             rot = so3.from_matrix(rot_mat)
 
             # self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.02, max_rot_v=0.05)
-            ic()
-            ic(trans)
-            self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.1, max_rot_v=0.1)
+            # ic()
+            # ic(trans)
+            # self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.1, max_rot_v=0.1)
+            self.ur5_controller.set_EE_transform_delta((rot, trans))
         
         # gripper_action = action[-1]
         # if gripper_action != self.prev_gripper_pos: 

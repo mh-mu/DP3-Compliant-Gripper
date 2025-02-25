@@ -26,7 +26,8 @@ def main(cfg: DictConfig):
     workspace = TrainDP3Workspace(cfg=cfg)
 
     # best_ckpt_path = workspace.get_checkpoint_path(tag="best")
-    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_peg_rigid_10Hz-dp3_realworld-0005_seed0/checkpoints'
+    ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_peg_rigid_24_10Hz-dp3_realworld_horizon1-horizon1_seed0/checkpoints'
+    # ckpt_dir = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/outputs/realworld_contact_10Hz-dp3_realworld-0003_seed0/checkpoints'
     best_ckpt_path = pathlib.Path(ckpt_dir).joinpath("latest.ckpt")
     if best_ckpt_path.is_file():
         print(f"Resuming from checkpoint {best_ckpt_path}")

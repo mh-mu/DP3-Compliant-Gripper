@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_10Hz_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_29_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print("Contents of the Zarr group:")
@@ -46,11 +46,11 @@ if __name__ == "__main__":
         '''
         save wrist_img as video
         '''
-        images = zarr_data['data/wrist_img'][-600:]
+        images = zarr_data['data/wrist_img'][-150:]
         # images = zarr_data['data/wrist_img'][:]
 
         height, width, layers = images[0].shape
-        video = cv2.VideoWriter('wrist_img_video_rigid.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
+        video = cv2.VideoWriter('wrist_img_video_rigid_29.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
 
         for image in images:
             image = (image * 255).astype('uint8')
@@ -128,8 +128,8 @@ if __name__ == "__main__":
         # # plt.show()
 
 
-    # rewrite episode end
-    combined_dataset = zarr.open(folder_path, mode='r+')
-    # total_num_step = combined_dataset['data/action'].shape[0]
-    # combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
-    print(combined_dataset['meta/episode_ends'][:])
+    # # rewrite episode end
+    # combined_dataset = zarr.open(folder_path, mode='r+')
+    # # total_num_step = combined_dataset['data/action'].shape[0]
+    # # combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
+    # print(combined_dataset['meta/episode_ends'][:])

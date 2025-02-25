@@ -64,7 +64,8 @@ class RealWorldReplayEnv(gym.Env):
                 print(f"Error opening Zarr folder: {e}")
                 return None
             
-        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_eval_10Hz_expert.zarr"
+        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_rigid_eval_10Hz_expert.zarr"
+        # folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_10Hz_expert.zarr"
         self.zarr_data = read_zarr_folder(folder_path)
         self.cur_step = 0
         self.current_episode = -1
