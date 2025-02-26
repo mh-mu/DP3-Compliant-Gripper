@@ -47,9 +47,9 @@ def calculate_new_action_state(state):
     return action, state
 
 if __name__ == "__main__":
-    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_compliant_expert.zarr'
+    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_expert.zarr'
     
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_compliant_processed_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_processed_expert.zarr'
 
     new_dataset = zarr.open(output_path, mode='w')
     original_dataset = zarr.open(dataset_path, mode='r')

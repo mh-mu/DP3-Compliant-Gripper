@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_29_10Hz_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_29_5Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print("Contents of the Zarr group:")

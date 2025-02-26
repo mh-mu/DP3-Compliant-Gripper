@@ -1,4 +1,5 @@
 import numpy as np
+from icecream import ic
 
 def rotation_6d_to_matrix(d6: np.ndarray) -> np.ndarray:
     """
@@ -41,6 +42,7 @@ def rotation_6d_to_matrix_batch(d6: np.ndarray) -> np.ndarray:
     """
 
     a1, a2 = d6[..., :3], d6[..., 3:]
+    # ic(d6.shape, a1, a2)
     b1 = a1 / np.linalg.norm(a1, axis=-1, keepdims=True)
     b2 = a2 - np.sum(b1 * a2, axis=-1, keepdims=True) * b1
     b2 = b2 / np.linalg.norm(b2, axis=-1, keepdims=True)
