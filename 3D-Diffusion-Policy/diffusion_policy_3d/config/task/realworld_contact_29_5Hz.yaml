@@ -1,4 +1,4 @@
-name: realworld_contact_29_10Hz
+name: realworld_contact_29_5Hz
 
 task_name: test
 
@@ -21,7 +21,7 @@ env_runner: null
 
 dataset:
   _target_: diffusion_policy_3d.dataset.realworld_dataset.RealWorldDataset
-  zarr_path: data/real-world_contact_29_10Hz_expert.zarr
+  zarr_path: data/real-world_contact_29_5Hz_expert.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}
