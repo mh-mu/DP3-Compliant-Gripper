@@ -1,8 +1,8 @@
 import zarr
 
 # Open the zarr dataset
-zarr_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_29_10Hz_expert.zarr' # avoid accidental runs
-# zarr_path = '/home/mh2595/project/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_rigid_eval_10Hz_expert.zarr'
+# zarr_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_train_10Hz_expert.zarr' # avoid accidental runs
+# zarr_path = '/home/mh2595/project/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_train_10Hz_expert.zarr'
 zarr_dataset = zarr.open(zarr_path, mode='r+')
 
 # Access the 'data' group
@@ -35,7 +35,8 @@ meta_group = zarr_dataset['meta']
 print(meta_group)
 
 # Iterate through subfolders in 'meta' and resize each array
-new_episode_ends = list(range(150, 4351, 150))
+total_num_step = zarr_dataset['data/action'].shape[0]
+new_episode_ends = list(range(150, total_num_step+1, 150))
 meta_group['episode_ends'].resize((len(new_episode_ends),))
 meta_group['episode_ends'][:] = new_episode_ends
 
