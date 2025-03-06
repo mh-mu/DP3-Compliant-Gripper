@@ -24,7 +24,7 @@ class RealWorldReplayEnv(gym.Env):
                  ):
         super(RealWorldReplayEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 200
+        self.episode_length = self._max_episode_steps = 75
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -64,8 +64,8 @@ class RealWorldReplayEnv(gym.Env):
                 print(f"Error opening Zarr folder: {e}")
                 return None
             
-        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_peg_rigid_eval_10Hz_expert.zarr"
-        # folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_10Hz_expert.zarr"
+        # folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_5Hz_expert.zarr"
+        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr"
         self.zarr_data = read_zarr_folder(folder_path)
         self.cur_step = 0
         self.current_episode = -1
@@ -94,7 +94,7 @@ class RealWorldReplayEnv(gym.Env):
 
         obs_dict = {
             'wrist_img': obs_pixels,
-            'force': robot_force,
+            'force': robot_force, 
             'state': robot_state,
         }
         return obs_dict

@@ -13,12 +13,12 @@ def read_zarr_folder(folder_path):
         print(f"Error opening Zarr folder: {e}")
         return None
     
-folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_eval_10Hz_expert.zarr"
+folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_10Hz_expert.zarr"
 zarr_data = read_zarr_folder(folder_path)
     
 
 # Prompt the user to input a list of paths for the pickle files
-pickle_files = ['/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_13.pkl']
+pickle_files = ['/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_25.pkl']
                 # '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_2.pkl',
                 # '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_3.pkl',
                 # '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/third_party/real_world/rollout_data/force_list_6.pkl',
@@ -59,7 +59,7 @@ if zarr_data:
     segment_length = 150
 
     # Plot the 900-1050 points from zarr_forces
-    zarr_z_forces_segment = zarr_forces[400:600, 2]
+    zarr_z_forces_segment = zarr_forces[450:600, 2]
     plt.plot(zarr_z_forces_segment, label='Example Training Force', linestyle='--', color='green', alpha=0.7)
     
     # for start in range(0, num_points, segment_length):

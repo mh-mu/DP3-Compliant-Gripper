@@ -8,7 +8,7 @@ from tqdm import tqdm
 from check_zarr_data import read_zarr_folder
 
 
-data_index = 29
+data_index = 48
 
 compare_training = False
 action_exec_horizon = 8
@@ -24,10 +24,10 @@ with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
 actions_array = np.array(actions_list)
 
 if compare_training:
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_peg_rigid_eval_10Hz_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        training_actions = zarr_data['data/action'][:200]
+        training_actions = zarr_data['data/action'][:150]
     else:
         raise Exception("Error reading Zarr data")
 
@@ -78,9 +78,13 @@ for i, (item, action_block) in tqdm(enumerate(zip(data, actions_array))):
         plt.figtext(0.03, 0.8, train_text_str, wrap=True, horizontalalignment='left', fontsize=8, color='purple')
         plt.figtext(0.03, 0.4, diff_text_str, wrap=True, horizontalalignment='left', fontsize=8, color='red')
     # Set axis limits
-    ax.set_xlim([-0.0015, 0.0015])
-    ax.set_ylim([-0.0015, 0.0015])
-    ax.set_zlim([-0.0015, 0.0015])
+    # ax.set_xlim([-0.0015, 0.0015])
+    # ax.set_ylim([-0.0015, 0.0015])
+    # ax.set_zlim([-0.0015, 0.0015])
+
+    ax.set_xlim([-0.0025, 0.0025])
+    ax.set_ylim([-0.0025, 0.0025])
+    ax.set_zlim([-0.0025, 0.0025])
     
     # Convert the plot to an image
     fig.canvas.draw()

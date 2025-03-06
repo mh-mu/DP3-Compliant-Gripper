@@ -35,7 +35,8 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 600
+        self.episode_length = self._max_episode_steps = 450
+        # self.episode_length = self._max_episode_steps = 2000
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -236,6 +237,7 @@ class RealWorldEnv(gym.Env):
         #         self.gripper_state = CONSTANTS.OPEN
 
         self.cur_step += 1
+        ic(self.cur_step)
 
         # img_wrist, img_gripper, img_third_view = self.get_rgb()
         img_wrist = self.get_rgb()
