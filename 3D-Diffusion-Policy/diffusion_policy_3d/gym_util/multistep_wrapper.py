@@ -180,7 +180,7 @@ class MultiStepWrapper(gym.Wrapper):
 
         observation = self._get_obs(self.n_obs_steps)
         # reward = aggregate(self.reward, self.reward_agg_method)
-        reward = None
+        reward = 0
         done = aggregate(self.done, 'max')
         info = dict_take_last_n(self.info, self.n_obs_steps)
         return observation, reward, done, info

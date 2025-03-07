@@ -1,0 +1,42 @@
+name: dummy_realworld
+
+task_name: dummy
+
+shape_meta: &shape_meta
+  # acceptable types: rgb, low_dim
+  obs:
+    wrist_img:
+      shape: [3, 480, 640]
+      type: rgb
+    force:
+      shape: [2]
+      type: low_dimx
+    state:
+      shape: [2]
+      type: low_dimx
+  action:
+    shape: [2]
+
+env_runner: null
+
+# env_runner:
+#   _target_: diffusion_policy_3d.env_runner.dummy_runner.DummyRunner
+#   eval_episodes: 10
+#   n_obs_steps: ${n_obs_steps}
+#   n_action_steps: ${n_action_steps}
+#   fps: 10
+#   n_envs: null
+#   n_train: null
+#   n_test: null
+#   task_name: ${task_name}
+#   device: ${training.device}
+
+dataset:
+  _target_: diffusion_policy_3d.dataset.realworld_dataset.RealWorldDataset
+  zarr_path: data/dummy-real-world_dummy_expert.zarr
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.02
+  max_train_episodes: 90

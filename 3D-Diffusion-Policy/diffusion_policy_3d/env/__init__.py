@@ -4,6 +4,7 @@
 # from .metaworld import MetaWorldEnv
 # from .manipulator_learning import ManipulatorLearnEnv
 from .real_world import RealWorldEnv
+from .real_world import DummyRealWorldEnv
 
 
 

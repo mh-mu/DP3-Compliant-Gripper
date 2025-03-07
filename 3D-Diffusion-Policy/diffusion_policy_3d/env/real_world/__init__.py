@@ -1,1 +1,2 @@
 from .real_world_wrapper import RealWorldEnv
+from .dummy_real_world_wrapper import DummyRealWorldEnv

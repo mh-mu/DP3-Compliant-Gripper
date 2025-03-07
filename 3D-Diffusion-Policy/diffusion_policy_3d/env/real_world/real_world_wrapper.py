@@ -296,10 +296,7 @@ class RealWorldEnv(gym.Env):
     def reset(self, seed = None, options = None):
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         time.sleep(2)
-
-        self.ur5_controller.set_EE_transform_linear(CONSTANTS.UR5_home_position, max_trans_v = 0.8)
-        self.gripper.close()
-        self.gripper_state = CONSTANTS.CLOSE
+        
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()
 

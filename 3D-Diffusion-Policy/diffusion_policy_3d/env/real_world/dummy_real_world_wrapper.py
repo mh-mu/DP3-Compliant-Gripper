@@ -17,8 +17,7 @@ from klampt.math import so3, se3
 from icecream import ic 
 import pickle
 
-from dummy_env import DummyEnv
-
+from .dummy_env import DummyEnv
 
 class DummyRealWorldEnv(gym.Env):
 
@@ -26,11 +25,37 @@ class DummyRealWorldEnv(gym.Env):
                  ):
         super(DummyRealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 450
+        self.episode_length = self._max_episode_steps = 30
         self.mode = mode
-        self.act_dim = 7
+        self.act_dim = 2
+        self.action_space = spaces.Box(
+            low=-320,
+            high=320,
+            shape=(self.act_dim,),
+            dtype=np.float32
+        )
+        self.observation_space = spaces.Dict({
+            'wrist_img': spaces.Box(
+                low=0,
+                high=1,
+                shape=(3, 480, 640),
+                dtype=np.float32
+            ),
+            'force': spaces.Box(
+                low=-np.inf,
+                high=np.inf,
+                shape=(3, ),
+                dtype=np.float32
+            ),
+            'state': spaces.Box(
+                low=-np.inf,
+                high=np.inf,
+                shape=(11, ),
+                dtype=np.float32
+            ),
+        })
 
-        self.env = DummyEnv(goal_position=(960, 720), force_coefficient=1e-2)
+        self.env = DummyEnv(goal_position=np.array([20, 60]), force_coefficient=1e-2)
         
         if self.mode == 'eval':
             self.ur5_action_list = []
@@ -96,7 +121,7 @@ class DummyRealWorldEnv(gym.Env):
 
         done = self.cur_step >= self.episode_length
         
-        return obs_dict, None, done, None
+        return obs_dict, 0, done, 0
 
     def reset(self, seed = None, options = None):
 

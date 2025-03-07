@@ -68,6 +68,21 @@ class DummyEnv:
     def get_latest_action(self):
         return self.latest_action
     
+    def calculate_action_towards_goal(self, initial_action_size=1):
+        center_x, center_y = self.grid_shape[1] // 2, self.grid_shape[0] // 2
+        direction = np.array([center_x, center_y]) - self.goal_position
+        distance = np.linalg.norm(direction)
+        
+        if distance == 0:
+            return np.array([0, 0])
+        
+        # Scale the action size based on the distance to the goal
+        action_size = max(1, initial_action_size * (distance / np.linalg.norm([center_x, center_y])))
+        direction_normalized = direction / distance
+        action = direction_normalized * action_size
+        
+        return action.astype(np.int32)
+    
     def step(self, action):
         self.take_action(action)
 
@@ -86,7 +101,7 @@ class DummyEnv:
 
 # Example usage
 if __name__ == "__main__":
-    goal_pos = (20, 60)  # Center of the larger grid
+    goal_pos = (20, 60)
     env = DummyEnv(goal_pos)
     rendered_image = env.render()
     cv2.imshow("Rendered Image", rendered_image)
