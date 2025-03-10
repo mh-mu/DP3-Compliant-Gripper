@@ -1,6 +1,6 @@
-name: dummy_realworld
+name: real_world_dummy
 
-task_name: dummy
+task_name: real_world_dummy
 
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
