@@ -33,7 +33,7 @@ env_runner: null
 
 dataset:
   _target_: diffusion_policy_3d.dataset.realworld_dataset.RealWorldDataset
-  zarr_path: data/dummy-real-world_dummy_combined_expert.zarr
+  zarr_path: data/dummy-real-world_dummy_expert.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}

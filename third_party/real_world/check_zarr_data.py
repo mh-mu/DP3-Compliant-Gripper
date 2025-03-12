@@ -46,11 +46,11 @@ if __name__ == "__main__":
         '''
         save wrist_img as video
         '''
-        images = zarr_data['data/wrist_img'][:]
+        images = zarr_data['data/wrist_img'][30:]
         # images = zarr_data['data/wrist_img'][:]
 
         height, width, layers = images[0].shape
-        video = cv2.VideoWriter('dummy.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
+        video = cv2.VideoWriter('dummy.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, (width, height))
 
         for image in images:
             image = (image * 255).astype('uint8')
@@ -130,5 +130,5 @@ if __name__ == "__main__":
     # rewrite episode end
     combined_dataset = zarr.open(folder_path, mode='r+')
     total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(30, total_num_step + 1, 30))
+    combined_dataset['meta/episode_ends'] = list(range(60, total_num_step + 1, 60))
     print(combined_dataset['meta/episode_ends'][:])
