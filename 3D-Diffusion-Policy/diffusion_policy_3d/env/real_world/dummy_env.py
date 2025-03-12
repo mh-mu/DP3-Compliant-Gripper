@@ -10,7 +10,7 @@ class DummyEnv:
 
         self.goal_position = goal_position
         self.force_coefficient = force_coefficient
-        self.done_radius = 5
+        self.done_radius = 15
 
         self.latest_action = np.array([0, 0])
 
@@ -26,6 +26,9 @@ class DummyEnv:
         cv2.drawMarker(image, (center_x, center_y), (255, 0, 0), markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
         
         return image
+    
+    def get_rgb(self):
+        return self.render()
 
     def get_goal_position(self):
         return self.goal_position
@@ -88,8 +91,11 @@ class DummyEnv:
 
         center_x, center_y = self.grid_shape[1] // 2, self.grid_shape[0] // 2
         distance_to_center = np.linalg.norm(self.goal_position - np.array([center_x, center_y]))
-        done = distance_to_center <= self.done_radius
-        return done
+        success = distance_to_center <= self.done_radius
+
+        info = {'success': success}
+
+        return success, info
     
     def reset(self):
         self.goal_position = np.array([

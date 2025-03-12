@@ -64,7 +64,7 @@ class DummyRunner(BaseRunner):
         self.video_save_dir = f'../../../eval_videos/{self.task_name}/'
         os.makedirs(self.video_save_dir, exist_ok=True)
 
-    def run(self, policy: BasePolicy, save_video=True):
+    def run(self, policy: BasePolicy, save_video=False, use_force=False):
         device = policy.device
         dtype = policy.dtype
 
@@ -73,7 +73,9 @@ class DummyRunner(BaseRunner):
         env = self.env
 
         
-        for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in Metaworld {self.task_name} Compliantcloud Env", leave=False, mininterval=self.tqdm_interval_sec):
+        # for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in Dummy {self.task_name} Env", leave=False, mininterval=self.tqdm_interval_sec):
+
+        for episode_idx in tqdm.tqdm(range(self.eval_episodes), desc=f"Eval in Dummy {self.task_name} Env", leave=False):
             
             # start rollout
             obs = env.reset()
@@ -92,7 +94,8 @@ class DummyRunner(BaseRunner):
                     obs_dict_input = {}
                     obs_dict_input['wrist_img'] = obs_dict['wrist_img'].unsqueeze(0)
                     obs_dict_input['state'] = obs_dict['state'].unsqueeze(0)
-                    obs_dict_input['force'] = obs_dict['force'].unsqueeze(0)
+                    if use_force:
+                        obs_dict_input['force'] = obs_dict['force'].unsqueeze(0)
                     action_dict = policy.predict_action(obs_dict_input)
 
                 np_action_dict = dict_apply(action_dict,
@@ -101,9 +104,10 @@ class DummyRunner(BaseRunner):
 
                 obs, reward, done, info = env.step(action)
 
-
                 traj_reward += reward
                 done = np.all(done)
+                # ic()
+                # ic(info)
                 is_success = is_success or max(info['success'])
 
             all_success_rates.append(is_success)
@@ -111,8 +115,6 @@ class DummyRunner(BaseRunner):
 
             # save video
             videos = np.array(env.env.get_video())
-            if len(videos.shape) == 5:
-                videos = videos[:, 0]  # select first frame
             
             if save_video:
                 video_filename = os.path.join(self.video_save_dir, f'{self.task_name}{episode_idx}_{is_success}_.mp4')
@@ -120,33 +122,13 @@ class DummyRunner(BaseRunner):
                 num_frames = videos.shape[0]
                 _, height, width = videos.shape[1:]
 
-                out = cv2.VideoWriter(video_filename, fourcc, self.fps, (width*2, height))
+                out = cv2.VideoWriter(video_filename, fourcc, self.fps, (width, height))
 
                 for i in range(videos.shape[0]):
-
-                    rgb_image_array = videos[i][:3, :, :] # rgb images
-                    rgb_image_array = np.transpose(rgb_image_array, (1, 2, 0))
-
-                    image_array = videos[i][-3:, :, :] # compliant images
-                    image_array = np.transpose(image_array, (1, 2, 0))
-
-                    h, w, c = image_array.shape
-                    merged_image = np.ones((h, w*2, c)).astype('uint8')
-
-                    # Ensure image is in uint8 format (necessary for cv2.VideoWriter)
-                    image_array = (image_array * 255).astype('uint8')
-                    rgb_image_array = (rgb_image_array * 255).astype('uint8')
-                    # print(np.ptp(image_array))
-
-                    # Convert RGB to BGR (OpenCV uses BGR format)
-                    image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
-                    rgb_image_array = cv2.cvtColor(rgb_image_array, cv2.COLOR_RGB2BGR)
-
-                    merged_image[:, 0:w, :] = rgb_image_array
-                    merged_image[:,w:2*w, :] = image_array
-
-                    # Write frame to video
-                    out.write(merged_image)
+                    frame = videos[i]
+                    frame = np.transpose(frame, (1, 2, 0))  # Convert from (C, H, W) to (H, W, C)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # Convert from RGB to BGR
+                    out.write(frame)
 
                 # Release video writer
                 out.release()

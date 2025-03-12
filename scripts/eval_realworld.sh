@@ -1,13 +1,13 @@
 cd 3D-Diffusion-Policy
 
-# wrist camera
-v4l2-ctl -d /dev/video2 --set-ctrl=focus_automatic_continuous=0
-v4l2-ctl -d /dev/video2 --set-ctrl=focus_absolute=20
-v4l2-ctl -d /dev/video2 --set-ctrl=auto_exposure=1
-v4l2-ctl -d /dev/video2 --set-ctrl=exposure_time_absolute=80
-v4l2-ctl -d /dev/video2 --set-ctrl=white_balance_automatic=0
-v4l2-ctl -d /dev/video2 --set-ctrl=white_balance_temperature=3000
-v4l2-ctl -d /dev/video2 --set-ctrl=brightness=128
+# # wrist camera
+# v4l2-ctl -d /dev/video2 --set-ctrl=focus_automatic_continuous=0
+# v4l2-ctl -d /dev/video2 --set-ctrl=focus_absolute=20
+# v4l2-ctl -d /dev/video2 --set-ctrl=auto_exposure=1
+# v4l2-ctl -d /dev/video2 --set-ctrl=exposure_time_absolute=80
+# v4l2-ctl -d /dev/video2 --set-ctrl=white_balance_automatic=0
+# v4l2-ctl -d /dev/video2 --set-ctrl=white_balance_temperature=3000
+# v4l2-ctl -d /dev/video2 --set-ctrl=brightness=128
 
 # # gripper camera
 # v4l2-ctl -d /dev/video8 --set-ctrl=focus_automatic_continuous=0

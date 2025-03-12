@@ -101,7 +101,7 @@ class DummyRealWorldEnv(gym.Env):
             
     def step(self, action: np.array):
         
-        done = self.env.step(action)
+        done, info = self.env.step(action)
         self.cur_step += 1
 
         img_wrist = self.get_rgb()
@@ -119,9 +119,10 @@ class DummyRealWorldEnv(gym.Env):
             'state': robot_state,
         }
 
+        # done = done or self.cur_step >= self.episode_length
         done = self.cur_step >= self.episode_length
         
-        return obs_dict, 0, done, 0
+        return obs_dict, 0, done, info
 
     def reset(self, seed = None, options = None):
 
