@@ -56,7 +56,7 @@ policy:
   shape_meta: ${shape_meta}
 
   use_compliant_image: False
-  use_force: True
+  use_force: False
   # use_wrist_img: False
   # use_gripper_img: True
   # use_third_view_img: False
@@ -72,14 +72,14 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 16
+  batch_size: 8
   num_workers: 8
   shuffle: True
   pin_memory: True
   persistent_workers: False
 
 val_dataloader:
-  batch_size: 16
+  batch_size: 8
   num_workers: 8
   shuffle: False
   pin_memory: True
