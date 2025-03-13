@@ -158,9 +158,12 @@ def main(args):
 				# 	gripper_action = prev_gripper_action
 				# prev_gripper_action = gripper_action
 
+				# TODO: debugging, retaining only x and y trans movements
+				rot_action = np.zeros(3)
+				trans_action = np.array([delta_trans[0], delta_trans[1], 0])
+
 				# action = np.concatenate((rot_action, trans_action, [gripper_action]))
 				action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))
-				# action = np.concatenate((np.random.rand(3), np.random.rand(3), [CONSTANTS.CLOSE]))
 		
 			action_arrays_sub.append(action)
 			obs_dict, _, done, _ = e.step(action)

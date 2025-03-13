@@ -46,7 +46,7 @@ if __name__ == "__main__":
         '''
         save wrist_img as video
         '''
-        images = zarr_data['data/wrist_img'][30:]
+        images = zarr_data['data/wrist_img'][:300]
         # images = zarr_data['data/wrist_img'][:]
 
         height, width, layers = images[0].shape

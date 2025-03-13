@@ -210,6 +210,7 @@ class RealWorldEnv(gym.Env):
                 trans = np.zeros_like(trans)
             
             rot = so3.from_rotation_vector(rot_vec)
+
             self.ur5_controller.set_EE_transform_delta((rot, trans))
 
         elif self.mode == 'eval': # from model prediction action is [rot_6d(6), trans(3)]

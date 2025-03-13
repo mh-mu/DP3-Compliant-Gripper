@@ -127,7 +127,7 @@ class DummyRunner(BaseRunner):
                 for i in range(videos.shape[0]):
                     frame = videos[i]
                     frame = np.transpose(frame, (1, 2, 0))  # Convert from (C, H, W) to (H, W, C)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # Convert from RGB to BGR
+                    # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # Convert from RGB to BGR
                     out.write(frame)
 
                 # Release video writer
