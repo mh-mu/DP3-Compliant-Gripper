@@ -13,7 +13,7 @@ def read_zarr_folder(folder_path):
         return None
 
 if __name__ == "__main__":
-    folder_path = "../../3D-Diffusion-Policy/data/dummy-real-world_dummy_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_hover2_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         print("Contents of the Zarr group:")
@@ -46,11 +46,11 @@ if __name__ == "__main__":
         '''
         save wrist_img as video
         '''
-        images = zarr_data['data/wrist_img'][:300]
+        images = zarr_data['data/wrist_img'][:900]
         # images = zarr_data['data/wrist_img'][:]
 
         height, width, layers = images[0].shape
-        video = cv2.VideoWriter('dummy.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, (width, height))
+        video = cv2.VideoWriter('hover.avi', cv2.VideoWriter_fourcc(*'DIVX'), 60, (width, height))
 
         for image in images:
             image = (image * 255).astype('uint8')
@@ -116,8 +116,8 @@ if __name__ == "__main__":
         index = np.arange(num_data_points)
 
         plt.figure(figsize=(12, 6))
-        plt.plot(index, actions[:num_data_points, 0], label='X', color='r')
-        plt.plot(index, actions[:num_data_points, 1], label='Y', color='g')
+        plt.plot(index, actions[:num_data_points, 3], label='X', color='r')
+        plt.plot(index, actions[:num_data_points, 4], label='Y', color='g')
         # plt.plot(index, actions[:num_data_points, 2], label='Action 6', color='b')
 
         plt.xlabel('Index')
@@ -130,5 +130,5 @@ if __name__ == "__main__":
     # rewrite episode end
     combined_dataset = zarr.open(folder_path, mode='r+')
     total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(60, total_num_step + 1, 60))
+    combined_dataset['meta/episode_ends'] = list(range(300, total_num_step + 1, 300))
     print(combined_dataset['meta/episode_ends'][:])

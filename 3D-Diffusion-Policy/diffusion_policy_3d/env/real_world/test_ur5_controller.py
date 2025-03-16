@@ -40,13 +40,18 @@ R_ATI_EE = [0, math.sqrt(2)/2,math.sqrt(2)/2, 0,math.sqrt(2)/2,-math.sqrt(2)/2, 
 HOME_t_obj = [-0.6, 0, 0.08] #[-0.5, 0, 0.08]
 
 ur5 = ur5ControlWrapper(home_T=(R_EE_WORLD_HOME, HOME_t_obj) , ip=UR5_ip, ft_sensor=None)
+time.sleep(2)
 
 # for i in range(1000):
 #     print(ur5.get_EE_transform())
 #     time.sleep(1)
 
-ur5.set_EE_transform(UR5_home_position)
-time.sleep(1)
+# ur5.set_EE_transform(UR5_home_position)
+# time.sleep(1)
+
+pos = ur5.get_EE_transform()
+ic(pos)
+quit()
 
 # success = pyspacemouse.open(dof_callback=pyspacemouse.print_state, button_callback=pyspacemouse.print_buttons)
 # if success:

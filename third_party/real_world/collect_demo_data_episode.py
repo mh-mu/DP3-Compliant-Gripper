@@ -144,6 +144,11 @@ def main(args):
 				if is_trigger_active():
 					rot_action = delta_rot_vec
 					trans_action = delta_trans
+
+					# TODO: debugging, retaining only x and y trans movements
+					rot_action = np.zeros(3)
+					trans_action = np.array([delta_trans[0], delta_trans[1], 0])
+
 				else:
 					rot_action = np.zeros(3)
 					trans_action = np.zeros(3)
@@ -158,9 +163,6 @@ def main(args):
 				# 	gripper_action = prev_gripper_action
 				# prev_gripper_action = gripper_action
 
-				# TODO: debugging, retaining only x and y trans movements
-				rot_action = np.zeros(3)
-				trans_action = np.array([delta_trans[0], delta_trans[1], 0])
 
 				# action = np.concatenate((rot_action, trans_action, [gripper_action]))
 				action = np.concatenate((rot_action, trans_action, [CONSTANTS.CLOSE]))

@@ -85,10 +85,10 @@ def combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=3):
 
 if __name__ == "__main__":
     dataset_paths = [
-        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr'
+        '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_hover_processed_expert.zarr'
         # '/home/mh2595/project/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr'
     ]
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_5Hz_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_hover_processed_10Hz_expert.zarr'
     # output_path = '/home/mh2595/project/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_5Hz_expert.zarr'
 
     combine_multiple_zarr_datasets(dataset_paths, output_path, stepskip=2)
@@ -124,5 +124,6 @@ if __name__ == "__main__":
     # Modify 'meta/episode_ends' list
     combined_dataset = zarr.open(output_path, mode='r+')
     total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(75, total_num_step + 1, 75))
+    ic(total_num_step)
+    combined_dataset['meta/episode_ends'] = list(range(100, total_num_step + 1, 100))
     print(combined_dataset['meta/episode_ends'][:])

@@ -35,7 +35,7 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 450
+        self.episode_length = self._max_episode_steps = 300
         # self.episode_length = self._max_episode_steps = 2000
         self.mode = mode
         self.act_dim = 7
@@ -135,7 +135,7 @@ class RealWorldEnv(gym.Env):
         eef_pos = self.ur5_controller.get_EE_transform()
 
         if self.mode == 'train':
-            state = np.concatenate([np.array(eef_pos[0] + eef_pos[1]), np.array([self.gripper_state])])
+            state = np.concatenate([np.array(eef_pos[0] + eef_pos[1]), np.array([CONSTANTS.CLOSE])])
         if self.mode == 'eval':
             rot = eef_pos[0]
             trans = eef_pos[1]
@@ -196,9 +196,9 @@ class RealWorldEnv(gym.Env):
         # record the previous action performed by the UR5 (for debugging)
         current_pose = self.ur5_controller.get_EE_transform()
         delta_position = list(np.array(current_pose[1]) - np.array(self.previous_pose[1]))
-        self.ur5_action_list.append(delta_position)
-        with open('ur5_action_list.pkl', 'wb') as f:
-            pickle.dump(self.ur5_action_list, f)
+        # self.ur5_action_list.append(delta_position)
+        # with open('ur5_action_list.pkl', 'wb') as f:
+        #     pickle.dump(self.ur5_action_list, f)
         self.previous_pose = current_pose
 
         if self.mode == 'train': # from collect_demo, action is [rot_vec(3), trans(3)]
@@ -297,6 +297,8 @@ class RealWorldEnv(gym.Env):
     def reset(self, seed = None, options = None):
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         time.sleep(2)
+
+        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
         
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()
@@ -308,8 +310,8 @@ class RealWorldEnv(gym.Env):
             print('Setup complete')
 
         self.previous_pose = self.ur5_controller.get_EE_transform()
-        with open('ur5_action_list.pkl', 'wb') as f:
-            pickle.dump(self.ur5_action_list, f)
+        # with open('ur5_action_list.pkl', 'wb') as f:
+        #     pickle.dump(self.ur5_action_list, f)
 
         if self.mode =='eval':
             with open(self.save_path, 'wb') as f:

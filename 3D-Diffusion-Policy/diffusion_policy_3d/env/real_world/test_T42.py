@@ -13,7 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hands import Model_T42
 
 # finger_offset_positions_compliant = [0.15, 0.15]
-# finger_offset_positions_rigid = [0.11, 0.11]
+# finger_offset_positions_rigid = [0.13, 0.13]
 
 gripper = T42_controller(finger_offset_positions_rigid, finger_type='rigid', port=gripper_port, data_collection_mode=False)
 # gripper = T42_controller(finger_offset_positions_compliant, finger_type='compliant', port=gripper_port, data_collection_mode=False)
@@ -21,13 +21,14 @@ ic(gripper.read_motor_positions())
 # gripper.release()
 time.sleep(1)
 gripper.move_to_zero_positions()
+time.sleep(1)
 # ic(gripper.read_motor_positions())
 # time.sleep(1)
-gripper.release()
-time.sleep(1)
-
-# gripper.close()
+# gripper.release()
 # time.sleep(1)
+
+gripper.close()
+time.sleep(1)
 
 # T = Model_T42(port='/dev/ttyUSB0', s1=1, s2=2, dyn_model='XM', s1_min=0.02, s2_min=0.4)
 # print(T.readMotor(0))

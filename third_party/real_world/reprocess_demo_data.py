@@ -5,6 +5,10 @@ from scipy.spatial.transform import Rotation
 from icecream import ic
 from tqdm import tqdm
 
+'''
+recalculate action based on recorded ee positions
+'''
+
 
 def copy_group(source_group, target_group):
     for key, item in source_group.items():
@@ -47,16 +51,16 @@ def calculate_new_action_state(state):
     return action, state
 
 if __name__ == "__main__":
-    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_expert.zarr'
+    dataset_path =  '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_hover_expert.zarr'
     
-    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_processed_expert.zarr'
+    output_path = '/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_hover_processed_expert.zarr'
 
     new_dataset = zarr.open(output_path, mode='w')
     original_dataset = zarr.open(dataset_path, mode='r')
     copy_group(original_dataset, new_dataset)
 
-    # Modify 'meta/episode_ends' list
-    combined_dataset = zarr.open(output_path, mode='r+')
-    total_num_step = combined_dataset['data/action'].shape[0]
-    combined_dataset['meta/episode_ends'] = list(range(600, total_num_step + 1, 600))
-    print(combined_dataset['meta/episode_ends'][:])
+    # # Modify 'meta/episode_ends' list
+    # combined_dataset = zarr.open(output_path, mode='r+')
+    # total_num_step = combined_dataset['data/action'].shape[0]
+    # combined_dataset['meta/episode_ends'] = list(range(300, total_num_step + 1, 300))
+    # print(combined_dataset['meta/episode_ends'][:])
