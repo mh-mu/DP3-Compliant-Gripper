@@ -31,8 +31,8 @@ v4l2-ctl -d /dev/video2 --set-ctrl=saturation=128
 # v4l2-ctl -d /dev/video5 --set-ctrl=brightness=128
 
 # Display webcam image using ffplay
-ffplay /dev/video2
+# ffplay /dev/video2
 
 export HYDRA_FULL_ERROR=1
 
-# python eval_realworld.py 
+python eval_realworld.py 

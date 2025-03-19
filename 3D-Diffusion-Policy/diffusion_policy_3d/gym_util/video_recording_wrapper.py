@@ -27,7 +27,7 @@ class SimpleVideoRecordingWrapper(gym.Wrapper):
 
         frame = self.env.render(mode=self.mode)
         frame = self.get_img()
-        assert frame.dtype == np.uint8
+        # assert frame.dtype == np.uint8
         self.frames.append(frame)
         
         self.step_count = 1

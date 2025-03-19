@@ -65,7 +65,7 @@ class RealWorldReplayEnv(gym.Env):
                 return None
             
         # folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_5Hz_expert.zarr"
-        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr"
+        folder_path = "/home/mh2595/workspace/implicit_force_simulation/third_party/3D-Diffusion-Policy/3D-Diffusion-Policy/data/real-world_hover_10Hz_expert.zarr"
         self.zarr_data = read_zarr_folder(folder_path)
         self.cur_step = 0
         self.current_episode = -1

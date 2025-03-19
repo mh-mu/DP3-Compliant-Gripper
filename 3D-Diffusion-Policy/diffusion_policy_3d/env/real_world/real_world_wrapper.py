@@ -298,7 +298,7 @@ class RealWorldEnv(gym.Env):
         self.ur5_controller = ur5ControlWrapper(home_T = (CONSTANTS.R_EE_WORLD_HOME, CONSTANTS.HOME_t_obj) , ip = CONSTANTS.UR5_ip, ft_sensor=None)
         time.sleep(2)
 
-        self.ur5_controller.set_EE_transform(CONSTANTS.UR5_home_position)
+        self.ur5_controller.set_EE_transform_linear(CONSTANTS.UR5_home_position, max_trans_v = 0.05)
         
         self.prev_gripper_pos = CONSTANTS.CLOSE
         self.ur5_controller.zero_ft_sensor()

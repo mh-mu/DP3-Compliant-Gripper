@@ -8,13 +8,16 @@ from tqdm import tqdm
 from check_zarr_data import read_zarr_folder
 
 
-data_index = 48
+data_index = 3
 
 compare_training = False
 action_exec_horizon = 8
 
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:
     data = pickle.load(file)
+
+ic(len(data))
+quit()
 
 print(f"Number of items in the pickle file: {len(data)}")
 
@@ -24,7 +27,7 @@ with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
 actions_array = np.array(actions_list)
 
 if compare_training:
-    folder_path = "../../3D-Diffusion-Policy/data/real-world_contact_eval_10Hz_expert.zarr"
+    folder_path = "../../3D-Diffusion-Policy/data/real-world_hover_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
         training_actions = zarr_data['data/action'][:150]

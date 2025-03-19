@@ -82,7 +82,7 @@ class RealworldRunner(BaseRunner):
             actions_file_index += 1
         self.actions_file_path = os.path.join(base_path, f'predicted_action_list_{actions_file_index}.pkl')
 
-    def run(self, policy: BasePolicy, save_video=True, use_force=False):
+    def run(self, policy: BasePolicy, save_video=False, use_force=False):
         device = policy.device
         dtype = policy.dtype
 
