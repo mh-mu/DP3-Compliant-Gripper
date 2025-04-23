@@ -35,8 +35,8 @@ class RealWorldEnv(gym.Env):
                  ):
         super(RealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 300
-        # self.episode_length = self._max_episode_steps = 2000
+        # self.episode_length = self._max_episode_steps = 300
+        self.episode_length = self._max_episode_steps = 2000
         self.mode = mode
         self.act_dim = 7
         self.action_space = spaces.Box(
@@ -177,6 +177,7 @@ class RealWorldEnv(gym.Env):
         #     img_third_view = img_third_view.transpose(2, 0, 1)
 
         img_wrist = img_wrist.astype(np.float32) / 255
+        img_wrist = img_wrist.astype(np.float16)
         # img_gripper = img_gripper.astype(np.float32) / 255
         # img_third_view = img_third_view.astype(np.float32) / 255
 
@@ -223,7 +224,7 @@ class RealWorldEnv(gym.Env):
 
             # self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.02, max_rot_v=0.05)
             # ic()
-            # ic(trans)
+            ic(trans)
             # self.ur5_controller.set_EE_transform_delta((rot, trans), max_trans_v=0.1, max_rot_v=0.1)
             self.ur5_controller.set_EE_transform_delta((rot, trans))
         

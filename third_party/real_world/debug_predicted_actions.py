@@ -8,7 +8,7 @@ from tqdm import tqdm
 from check_zarr_data import read_zarr_folder
 
 
-data_index = 3
+data_index = 20
 
 compare_training = False
 action_exec_horizon = 8
@@ -16,13 +16,14 @@ action_exec_horizon = 8
 with open(f'rollout_data/obs_dict_list_{data_index}.pkl', 'rb') as file:
     data = pickle.load(file)
 
-ic(len(data))
-quit()
+# ic(len(data))
+# quit()
 
 print(f"Number of items in the pickle file: {len(data)}")
 
 actions_list = []
-with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
+# with open(f'rollout_data/predicted_action_list_{data_index}.pkl', 'rb') as file:
+with open(f'rollout_data/predicted_action_list_18.pkl', 'rb') as file:
     actions_list = pickle.load(file)
 actions_array = np.array(actions_list)
 
@@ -30,12 +31,12 @@ if compare_training:
     folder_path = "../../3D-Diffusion-Policy/data/real-world_hover_10Hz_expert.zarr"
     zarr_data = read_zarr_folder(folder_path)
     if zarr_data:
-        training_actions = zarr_data['data/action'][:150]
+        training_actions = zarr_data['data/action'][:75]
     else:
         raise Exception("Error reading Zarr data")
 
 fourcc = cv2.VideoWriter_fourcc(*'VP80')
-out = cv2.VideoWriter(f'rollout_data/output_{data_index}.webm', fourcc, 5.0, (640*3, 480))
+out = cv2.VideoWriter(f'rollout_data/output_{data_index}.avi', fourcc, 5.0, (640*3, 480))
 
 
 all_percentage_diffs = []

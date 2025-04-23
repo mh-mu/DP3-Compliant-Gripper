@@ -16,7 +16,7 @@ from termcolor import cprint
 
 import cv2
 import os
-import pickle
+import pickle, time
 from icecream import ic
 
 class RealworldRunner(BaseRunner):
@@ -46,9 +46,9 @@ class RealworldRunner(BaseRunner):
         def env_fn(task_name):
             return MultiStepWrapper(
                 SimpleVideoRecordingWrapper(
-                    # RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
+                    RealWorldEnv(task_name=task_name, finger_type='rigid', device=device, demo_device='vr', mode='eval')),
                     # RealWorldEnv(task_name=task_name, finger_type='compliant', device=device, demo_device='vr', mode='eval')),
-                    RealWorldReplayEnv(task_name=task_name, device=device, mode='eval')), # for testing training data
+                    # RealWorldReplayEnv(task_name=task_name, device=device, mode='eval')), # for testing training data
                 n_obs_steps=n_obs_steps,
                 n_action_steps=n_action_steps,
                 max_episode_steps=max_steps,
@@ -109,6 +109,7 @@ class RealworldRunner(BaseRunner):
                                       lambda x: torch.from_numpy(x).to(
                                           device=device))
 
+
                 with torch.no_grad():
                     obs_dict_input = {}
                     obs_dict_input['wrist_img'] = obs_dict['wrist_img'].unsqueeze(0)
@@ -146,6 +147,8 @@ class RealworldRunner(BaseRunner):
                 done = np.all(done)
                 is_success = is_success #or max(info['success'])
 
+                # DEBUG:YIFAN
+                time.sleep(1)
             all_success_rates.append(is_success)
             # all_traj_rewards.append(traj_reward)
 

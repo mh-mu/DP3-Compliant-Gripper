@@ -146,8 +146,8 @@ def main(args):
 					trans_action = delta_trans
 
 					# TODO: debugging, retaining only x and y trans movements
-					rot_action = np.zeros(3)
-					trans_action = np.array([delta_trans[0], delta_trans[1], 0])
+					# rot_action = np.zeros(3)
+					# trans_action = np.array([delta_trans[0], delta_trans[1], 0])
 
 				else:
 					rot_action = np.zeros(3)

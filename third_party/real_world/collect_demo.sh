@@ -40,5 +40,5 @@ v4l2-ctl -d /dev/video2 --set-ctrl=saturation=128
 # ffplay /dev/video2
 
 # Run the Python script
-python3 collect_demo_data_episode.py --env_name hover5 --finger_type rigid --num_episodes 10
+python3 collect_demo_data_episode.py --env_name area_exam --finger_type rigid --num_episodes 1
 

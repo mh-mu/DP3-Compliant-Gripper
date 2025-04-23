@@ -463,6 +463,7 @@ class TrainDP3Workspace:
         for key in include_keys:
             if key in payload['pickles']:
                 self.__dict__[key] = dill.loads(payload['pickles'][key])
+
     
     def load_checkpoint(self, path=None, tag='latest',
             exclude_keys=None, 

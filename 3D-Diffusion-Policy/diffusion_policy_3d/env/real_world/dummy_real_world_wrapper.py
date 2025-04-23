@@ -25,8 +25,8 @@ class DummyRealWorldEnv(gym.Env):
                  ):
         super(DummyRealWorldEnv, self).__init__()
     
-        self.episode_length = self._max_episode_steps = 60
-        # self.episode_length = self._max_episode_steps = 150
+        # self.episode_length = self._max_episode_steps = 60
+        self.episode_length = self._max_episode_steps = 500
         self.mode = mode
         self.act_dim = 2
         self.action_space = spaces.Box(
